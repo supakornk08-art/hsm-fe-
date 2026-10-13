@@ -144,7 +144,9 @@ details.grp summary::-webkit-details-marker{display:none}
     </div>
     <div id="groups"></div>
     <div class="card legend">
-      <b>Judgment Mark (Bearing Temp.)</b> — O : Good &lt; 70 °C · △ : Caution 70 ~ 80 °C · X : Danger &gt; 80 °C<br>
+      <b>Judgment Mark</b> — เกณฑ์แยกตามค่า Alarm H ของแต่ละรายการ<br>
+      O : Good ต่ำกว่า (H − ระยะเตือน) · △ : Caution เข้าใกล้ Alarm H · X : Danger ถึง Alarm H ขึ้นไป<br>
+      ระยะเตือน: Winding / Bearing / Transformer 10 °C · Cold / Hot Air 5 °C (ช่วงของแต่ละรายการแสดงใต้ชื่อ)<br>
       <b>Safety Point</b> @ ควรใช้ความระมัดระวังในการ Check<br>
       ตัวเลขใต้ชื่อรายการ = ค่า Alarm H / H.H. ถ้าค่าที่กรอกถึงค่านี้ จะขึ้นเตือนสีแดง · แตะชื่อรายการเพื่อเพิ่ม Remark
     </div>
@@ -229,11 +231,36 @@ st.sig=st.sig||{};
 function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
 
 const MARK={O:'O',D:'△',X:'X'};
-function judge(v){ if(v===''||v==null||isNaN(v)) return ''; v=+v; return v<70?'O':(v<=80?'D':'X'); }
-function mk(v){const j=judge(v); return j?MARK[j]:'';}
+// ================== เกณฑ์ Judgment (แก้ไขตรงนี้) ==================
+// X Danger  : ค่า >= Alarm H ของรายการนั้น
+// △ Caution : ค่า >= (Alarm H − MARGIN)  คือเข้าใกล้ Alarm
+// O Good    : ต่ำกว่านั้น
+const MARGIN={WINDING:10, BEARING:10, AIR:5, TRANSFORMER:10};   // ระยะเตือนก่อนถึง Alarm H (°C)
+// รายการที่ไม่มีค่า Alarm H ในแบบฟอร์ม ใช้ค่าอ้างอิงนี้แทน (Caution ตั้งแต่ c, Danger ตั้งแต่ d)
+const NO_ALARM={
+  'COLD AIR':    {c:43, d:48},   // อ้างอิง Cold Air ของ F1–F6 (H 48)
+  'HOT AIR':     {c:63, d:68},   // อ้างอิง Hot Air ของ F1–F6 (H 68)
+  'TRANSFORMER': {c:70, d:80},   // เกณฑ์เดิมของแบบฟอร์ม — รอยืนยันค่า Alarm จริง
+};
+// กำหนดเฉพาะรายการ (ใส่เลข No.) — มีผลเหนือกฎด้านบน เช่น 44:{c:60,d:68}
+const OVERRIDE={};
+// =================================================================
+function typeOf(n){ return /TRANSFORMER/.test(n)?'TRANSFORMER':/BEARING/.test(n)?'BEARING':/COLD AIR/.test(n)?'COLD AIR':/HOT AIR/.test(n)?'HOT AIR':'WINDING'; }
+function limOf(it){
+  if(OVERRIDE[it.no]) return Object.assign({src:'override'},OVERRIDE[it.no]);
+  const t=typeOf(it.name);
+  if(it.h!=null){ const m=MARGIN[/AIR/.test(t)?'AIR':t]; return {c:it.h-m,d:it.h,src:'alarm'}; }
+  return Object.assign({src:'ref'},NO_ALARM[t]);
+}
+function judgeIt(it,v){ if(v===''||v==null||isNaN(v)) return ''; v=+v; const L=limOf(it); return v>=L.d?'X':(v>=L.c?'D':'O'); }
+function jd(it){ return judgeIt(it,st.v[it.no]); }
+function mkI(it){ const j=jd(it); return j?MARK[j]:''; }
+function stdTxt(it){ const L=limOf(it); return '< '+L.c+' °C'; }
+function rangeTxt(it){ const L=limOf(it); return `O <${L.c} · △ ${L.c}–${L.d} · X ≥${L.d}`; }
 function alarmOf(it){const v=st.v[it.no]; if(v===''||v==null||isNaN(v)) return '';
   if(it.hh!=null&&+v>=it.hh) return 'ถึง H.H. ('+it.hh+'°C)'; if(it.h!=null&&+v>=it.h) return 'ถึง Alarm H ('+it.h+'°C)'; return '';}
-function limTxt(it){const a=[]; if(it.h!=null)a.push('H '+it.h+'°C'); if(it.hh!=null)a.push('H.H. '+it.hh+'°C'); return a.length?'Alarm: '+a.join(' · '):'STD < 70 °C';}
+function limTxt(it){const a=[]; if(it.h!=null)a.push('H '+it.h+'°C'); if(it.hh!=null)a.push('H.H. '+it.hh+'°C');
+  const L=limOf(it); return (a.length?'Alarm: '+a.join(' · ')+'<br>':'<span style="color:var(--warn)">ไม่มีค่า Alarm ในฟอร์ม · ใช้ค่าอ้างอิง</span><br>')+rangeTxt(it);}
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 // ---------- Tabs ----------
@@ -266,13 +293,13 @@ DATA.forEach((G,gi)=>{
   box.appendChild(d);
 });
 function upd(it){
-  const j=judge(st.v[it.no]); const el=document.getElementById('j'+it.no);
+  const j=jd(it); const el=document.getElementById('j'+it.no);
   el.className='judge '+j; el.textContent=j?MARK[j]:'–';
   const a=document.getElementById('a'+it.no), m=alarmOf(it);
   a.textContent=m?'⚠ '+m:''; a.classList.toggle('on',!!m);
 }
 function cnt(){
-  DATA.forEach((G,gi)=>{const its=ITEMS.filter(i=>i.gi===gi); const f=its.filter(i=>judge(st.v[i.no])).length;
+  DATA.forEach((G,gi)=>{const its=ITEMS.filter(i=>i.gi===gi); const f=its.filter(i=>jd(i)).length;
     const e=document.getElementById('c'+gi); e.textContent=f+'/'+its.length; e.classList.toggle('done',f===its.length);});
 }
 ITEMS.forEach(upd); cnt();
@@ -288,13 +315,13 @@ st.date=fDate.value;
 // ---------- Summary ----------
 function renderSummary(){
   let n=0,c={O:0,D:0,X:0};
-  ITEMS.forEach(it=>{const j=judge(st.v[it.no]); if(j){n++;c[j]++;}});
+  ITEMS.forEach(it=>{const j=jd(it); if(j){n++;c[j]++;}});
   sHead.textContent=`${st.date||'-'} · Shift ${st.shift||'-'} · ${st.insp||'(ยังไม่ระบุผู้ตรวจ)'}`;
   sAll.firstChild.nodeValue=n+'/'+ITEMS.length; sO.firstChild.nodeValue=c.O; sD.firstChild.nodeValue=c.D; sX.firstChild.nodeValue=c.X;
-  sGroups.innerHTML=DATA.map((G,gi)=>{const its=ITEMS.filter(i=>i.gi===gi); const f=its.filter(i=>judge(st.v[i.no])).length;
+  sGroups.innerHTML=DATA.map((G,gi)=>{const its=ITEMS.filter(i=>i.gi===gi); const f=its.filter(i=>jd(i)).length;
     return `<span>${G.g}</span><span class="cnt ${f===its.length?'done':''}">${f}/${its.length}</span><div class="prog"><i style="width:${f/its.length*100}%"></i></div>`;}).join('');
-  const ab=ITEMS.filter(it=>['D','X'].includes(judge(st.v[it.no]))||alarmOf(it));
-  sAbn.innerHTML=ab.length?ab.map(it=>{const j=judge(st.v[it.no]), m=alarmOf(it);
+  const ab=ITEMS.filter(it=>['D','X'].includes(jd(it))||alarmOf(it));
+  sAbn.innerHTML=ab.length?ab.map(it=>{const j=jd(it), m=alarmOf(it);
     return `<div class="ab"><div class="judge ${j}">${MARK[j]}</div><div>#${it.no} ${it.name}<small>${m?'⚠ '+m:''}${st.r[it.no]?(m?' · ':'')+esc(st.r[it.no]):''}</small></div><div class="val">${esc(st.v[it.no])}°C</div></div>`;}).join('')
     :'<div class="empty">ไม่มีรายการผิดปกติ</div>';
   renderSigns();
@@ -333,7 +360,7 @@ function saveSign(){
 function resetAll(){ if(!confirm('ล้างข้อมูลทั้งหมด (รวมลายเซ็น)?')) return; st.v={}; st.r={}; st.sig={}; save(); location.reload(); }
 function exportCSV(){
   const rows=[['Date',st.date,'Shift',st.shift,'Inspector',st.insp],[],['No','Inspection Item','Temp H.H.','Temp H.','STD','Actual','Judgment','Remark']];
-  ITEMS.forEach(it=>rows.push([it.no,it.name,it.hh??'',it.h??'','<70',st.v[it.no]??'',mk(st.v[it.no]),st.r[it.no]||'']));
+  ITEMS.forEach(it=>rows.push([it.no,it.name,it.hh??'',it.h??'',stdTxt(it),st.v[it.no]??'',mkI(it),st.r[it.no]||'']));
   rows.push([],['Sign-off','Name','Date']); ROLES.forEach(r=>{const s=st.sig[r]||{}; rows.push([r,s.name||'',s.date||'']);});
   const csv='﻿'+rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\r\n');
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
@@ -343,14 +370,14 @@ function exportCSV(){
 function signTable(){
   const sg=ROLES.map(r=>{const s=st.sig[r]||{}; return `<td>${s.img?`<img src="${s.img}">`:''}${esc(s.name)}<br>(${s.date||'……/……/……'})</td>`;}).join('');
   return `<table class="sgt" style="margin-top:6px"><tr><th>Judgment Mark / Safety Point</th>${ROLES.map(r=>`<th>${r}</th>`).join('')}</tr>
-  <tr><td style="text-align:left;vertical-align:top">O : Good &lt; 70 °C<br>△ : Caution 70 ~ 80 °C<br>X : Danger &gt; 80 °C<br>@ ควรใช้ความระมัดระวังในการ Check</td>${sg}</tr></table>
+  <tr><td style="text-align:left;vertical-align:top">O : Good ต่ำกว่าค่า STD<br>△ : Caution ใกล้ Alarm H<br>X : Danger ถึง Alarm H<br>@ ควรใช้ความระมัดระวังในการ Check</td>${sg}</tr></table>
   <div style="display:flex;justify-content:space-between;margin-top:2px"><span>วันที่บังคับใช้ : 1 มิถุนายน</span><span>แก้ไขครั้งที่ (REV.) : 01</span></div>`;
 }
 function buildSummaryPrint(){
-  let n=0,c={O:0,D:0,X:0}; ITEMS.forEach(it=>{const j=judge(st.v[it.no]); if(j){n++;c[j]++;}});
-  const ab=ITEMS.filter(it=>['D','X'].includes(judge(st.v[it.no]))||alarmOf(it));
-  const grp=DATA.map((G,gi)=>{const its=ITEMS.filter(i=>i.gi===gi); const f=its.filter(i=>judge(st.v[i.no])).length;
-    const k={O:0,D:0,X:0}; its.forEach(i=>{const j=judge(st.v[i.no]); if(j)k[j]++;});
+  let n=0,c={O:0,D:0,X:0}; ITEMS.forEach(it=>{const j=jd(it); if(j){n++;c[j]++;}});
+  const ab=ITEMS.filter(it=>['D','X'].includes(jd(it))||alarmOf(it));
+  const grp=DATA.map((G,gi)=>{const its=ITEMS.filter(i=>i.gi===gi); const f=its.filter(i=>jd(i)).length;
+    const k={O:0,D:0,X:0}; its.forEach(i=>{const j=jd(i); if(j)k[j]++;});
     return `<tr><td>${G.g}</td><td>${f}/${its.length}</td><td>${k.O}</td><td>${k.D}</td><td>${k.X}</td></tr>`;}).join('');
   printArea.innerHTML=`<section>
   <h2><img src="${LOGO}">Summary — Inspection Report Motor and Transformer Temp. (Line: Main motor)</h2>
@@ -359,7 +386,7 @@ function buildSummaryPrint(){
   <tr><td>${n}/${ITEMS.length}</td><td>${c.O}</td><td>${c.D}</td><td>${c.X}</td></tr></table>
   <h4>รายการผิดปกติ (△ / X / ถึง Alarm)</h4>
   ${ab.length?`<table><tr><th>No.</th><th>Inspection Item</th><th>Actual</th><th>Judgment</th><th>Alarm</th><th>Remark</th></tr>
-  ${ab.map(it=>`<tr><td>${it.no}</td><td>${it.name}</td><td>${esc(st.v[it.no])} °C</td><td>${mk(st.v[it.no])}</td><td>${alarmOf(it)}</td><td>${esc(st.r[it.no])}</td></tr>`).join('')}</table>`
+  ${ab.map(it=>`<tr><td>${it.no}</td><td>${it.name}</td><td>${esc(st.v[it.no])} °C</td><td>${mkI(it)}</td><td>${alarmOf(it)}</td><td>${esc(st.r[it.no])}</td></tr>`).join('')}</table>`
   :'<p>ไม่มีรายการผิดปกติ</p>'}
   <h4>สรุปตามกลุ่ม</h4>
   <table><tr><th>กลุ่ม</th><th>บันทึก</th><th>O</th><th>△</th><th>X</th></tr>${grp}</table>
@@ -377,10 +404,10 @@ window.addEventListener('beforeprint',()=>{
   <h2><img src="${LOGO}">Inspection Report Motor and Transformer Temp. — Line: Main motor</h2>
   <p style="display:flex;justify-content:space-between;margin:0 0 3px"><span>Date: ${st.date} &nbsp; Section: EHSM &nbsp; Shift: ${esc(st.shift)} &nbsp; Period: 1 Day</span><span>Page ${pi+1} / ${pages.length}</span></p>
   <table><tr><th>No.</th><th>Inspection Item</th><th>Temp H.H.</th><th>Temp H.</th><th>STD</th><th>Actual</th><th>Judgment</th><th>Remark</th></tr>
-  ${its.map(it=>`<tr><td>${it.no}</td><td>${it.name}</td>${c(it.hh)}${c(it.h)}<td>&lt; 70 °C</td><td>${esc(st.v[it.no])}</td><td>${mk(st.v[it.no])}</td><td>${esc(st.r[it.no])}</td></tr>`).join('')}
+  ${its.map(it=>`<tr><td>${it.no}</td><td>${it.name}</td>${c(it.hh)}${c(it.h)}<td>${esc(stdTxt(it))}</td><td>${esc(st.v[it.no])}</td><td>${mkI(it)}</td><td>${esc(st.r[it.no])}</td></tr>`).join('')}
   </table>
   <table class="sgt" style="margin-top:6px"><tr><th>Judgment Mark / Safety Point</th>${ROLES.map(r=>`<th>${r}</th>`).join('')}</tr>
-  <tr><td style="text-align:left;vertical-align:top">O : Good &lt; 70 °C<br>△ : Caution 70 ~ 80 °C<br>X : Danger &gt; 80 °C<br>@ ควรใช้ความระมัดระวังในการ Check</td>${sg}</tr></table>
+  <tr><td style="text-align:left;vertical-align:top">O : Good ต่ำกว่าค่า STD<br>△ : Caution ใกล้ Alarm H<br>X : Danger ถึง Alarm H<br>@ ควรใช้ความระมัดระวังในการ Check</td>${sg}</tr></table>
   <div style="display:flex;justify-content:space-between;margin-top:2px"><span>วันที่บังคับใช้ : 1 มิถุนายน</span><span>แก้ไขครั้งที่ (REV.) : 01</span></div>
   </section>`).join('');
 });
