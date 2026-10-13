@@ -146,7 +146,7 @@ details.grp summary::-webkit-details-marker{display:none}
     <div class="card legend">
       <b>Judgment Mark</b> — เกณฑ์แยกตามค่า Alarm H ของแต่ละรายการ<br>
       O : Good ต่ำกว่า (H − ระยะเตือน) · △ : Caution เข้าใกล้ Alarm H · X : Danger ถึง Alarm H ขึ้นไป<br>
-      ระยะเตือน: Winding / Bearing / Transformer 10 °C · Cold / Hot Air 5 °C (ช่วงของแต่ละรายการแสดงใต้ชื่อ)<br>
+      ระยะเตือน: Winding / Transformer 10 °C · Cold / Hot Air 5 °C · Bearing ใช้เกณฑ์ฟอร์มเดิม O &lt;70 · △ 70~80 · X &gt;80 °C (ช่วงของแต่ละรายการแสดงใต้ชื่อ)<br>
       <b>Safety Point</b> @ ควรใช้ความระมัดระวังในการ Check<br>
       ตัวเลขใต้ชื่อรายการ = ค่า Alarm H / H.H. ถ้าค่าที่กรอกถึงค่านี้ จะขึ้นเตือนสีแดง · แตะชื่อรายการเพื่อเพิ่ม Remark
     </div>
@@ -235,12 +235,16 @@ const MARK={O:'O',D:'△',X:'X'};
 // X Danger  : ค่า >= Alarm H ของรายการนั้น
 // △ Caution : ค่า >= (Alarm H − MARGIN)  คือเข้าใกล้ Alarm
 // O Good    : ต่ำกว่านั้น
-const MARGIN={WINDING:10, BEARING:10, AIR:5, TRANSFORMER:10};   // ระยะเตือนก่อนถึง Alarm H (°C)
+const MARGIN={WINDING:10, AIR:5, TRANSFORMER:10};   // ระยะเตือนก่อนถึง Alarm H (°C)
+// ประเภทที่ใช้เกณฑ์คงที่ตามแบบฟอร์มเดิม (ไม่อิง Alarm H)  gt:true = X เมื่อ "มากกว่า" d
+const FIXED={
+  'BEARING':     {c:70, d:80, gt:true},   // แบบฟอร์ม REV.01: O <70 · △ 70~80 · X >80
+};
 // รายการที่ไม่มีค่า Alarm H ในแบบฟอร์ม ใช้ค่าอ้างอิงนี้แทน (Caution ตั้งแต่ c, Danger ตั้งแต่ d)
 const NO_ALARM={
   'COLD AIR':    {c:43, d:48},   // อ้างอิง Cold Air ของ F1–F6 (H 48)
   'HOT AIR':     {c:63, d:68},   // อ้างอิง Hot Air ของ F1–F6 (H 68)
-  'TRANSFORMER': {c:70, d:80},   // เกณฑ์เดิมของแบบฟอร์ม — รอยืนยันค่า Alarm จริง
+  'TRANSFORMER': {c:70, d:80, gt:true},   // เกณฑ์เดิมของแบบฟอร์ม: O <70 · △ 70~80 · X >80
 };
 // กำหนดเฉพาะรายการ (ใส่เลข No.) — มีผลเหนือกฎด้านบน เช่น 44:{c:60,d:68}
 const OVERRIDE={};
@@ -249,14 +253,15 @@ function typeOf(n){ return /TRANSFORMER/.test(n)?'TRANSFORMER':/BEARING/.test(n)
 function limOf(it){
   if(OVERRIDE[it.no]) return Object.assign({src:'override'},OVERRIDE[it.no]);
   const t=typeOf(it.name);
+  if(FIXED[t]) return Object.assign({src:'form'},FIXED[t]);
   if(it.h!=null){ const m=MARGIN[/AIR/.test(t)?'AIR':t]; return {c:it.h-m,d:it.h,src:'alarm'}; }
   return Object.assign({src:'ref'},NO_ALARM[t]);
 }
-function judgeIt(it,v){ if(v===''||v==null||isNaN(v)) return ''; v=+v; const L=limOf(it); return v>=L.d?'X':(v>=L.c?'D':'O'); }
+function judgeIt(it,v){ if(v===''||v==null||isNaN(v)) return ''; v=+v; const L=limOf(it); return (L.gt?v>L.d:v>=L.d)?'X':(v>=L.c?'D':'O'); }
 function jd(it){ return judgeIt(it,st.v[it.no]); }
 function mkI(it){ const j=jd(it); return j?MARK[j]:''; }
 function stdTxt(it){ const L=limOf(it); return '< '+L.c+' °C'; }
-function rangeTxt(it){ const L=limOf(it); return `O <${L.c} · △ ${L.c}–${L.d} · X ≥${L.d}`; }
+function rangeTxt(it){ const L=limOf(it); return `O <${L.c} · △ ${L.c}–${L.d} · X ${L.gt?'>':'≥'}${L.d}`; }
 function alarmOf(it){const v=st.v[it.no]; if(v===''||v==null||isNaN(v)) return '';
   if(it.hh!=null&&+v>=it.hh) return 'ถึง H.H. ('+it.hh+'°C)'; if(it.h!=null&&+v>=it.h) return 'ถึง Alarm H ('+it.h+'°C)'; return '';}
 function limTxt(it){const a=[]; if(it.h!=null)a.push('H '+it.h+'°C'); if(it.hh!=null)a.push('H.H. '+it.hh+'°C');
