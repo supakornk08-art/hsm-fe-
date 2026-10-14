@@ -111,13 +111,22 @@ details.grp summary::-webkit-details-marker{display:none}
   #printArea .gray{background:#777}
   #printArea h2{font-size:12px;margin:0 0 3px;display:flex;align-items:center;gap:10px}
   #printArea h2 img{height:22px}
-  #printArea h4{font-size:10px;margin:8px 0 3px}
+  #printArea h4{font-size:10px;margin:6px 0 2px}
+  #printArea .cmp td,#printArea .cmp th{padding:0 3px;height:14px;font-size:8.5px}
   #printArea .kp td{text-align:center;font-size:11px;font-weight:700}
   #printArea .pg{break-after:page;page-break-after:always}
   #printArea .pg:last-child{break-after:auto;page-break-after:auto}
-  #printArea td{height:18px}
-  #printArea .sgt td{text-align:center;vertical-align:bottom;height:52px;width:12.5%}
-  #printArea .sgt img{max-height:34px;max-width:100%;display:block;margin:0 auto}
+  #printArea .res{table-layout:fixed}
+  #printArea .res td{height:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #printArea .res tr{break-inside:avoid}
+  #printArea .signblk{break-inside:avoid;page-break-inside:avoid;margin-top:5px}
+  #printArea .legend{font-size:8.5px;border:1px solid #000;border-bottom:0;padding:2px 4px;display:flex;justify-content:space-between;gap:8px}
+  #printArea .sgt{table-layout:fixed}
+  #printArea .sgt th{font-size:8.5px;padding:2px}
+  #printArea .sgt td{text-align:center;vertical-align:bottom;height:44px;padding:1px 2px;font-size:8px;line-height:1.15;overflow:hidden}
+  #printArea .sgt img{max-height:24px;max-width:100%;display:block;margin:0 auto 1px}
+  #printArea .pg{display:flex;flex-direction:column;min-height:270mm}
+  #printArea .pg .signblk{margin-top:auto;padding-top:5px}
   @page{size:A4;margin:8mm}
 }
 </style>
@@ -375,9 +384,10 @@ function exportCSV(){
 // print layout (คล้ายแบบฟอร์มกระดาษ)
 function signTable(){
   const sg=ROLES.map(r=>{const s=st.sig[r]||{}; return `<td>${s.img?`<img src="${s.img}">`:''}${esc(s.name)}<br>(${s.date||'……/……/……'})</td>`;}).join('');
-  return `<table class="sgt" style="margin-top:6px"><tr><th>Judgment Mark / Safety Point</th>${ROLES.map(r=>`<th>${r}</th>`).join('')}</tr>
-  <tr><td style="text-align:left;vertical-align:top">O : Good ต่ำกว่าค่า STD<br>△ : Caution ใกล้ Alarm H<br>X : Danger ถึง Alarm H<br>@ ควรใช้ความระมัดระวังในการ Check</td>${sg}</tr></table>
-  <div style="display:flex;justify-content:space-between;margin-top:2px"><span>วันที่บังคับใช้ : 1 มิถุนายน</span><span>แก้ไขครั้งที่ (REV.) : 01</span></div>`;
+  return `<div class="signblk">
+  <div class="legend"><span><b>Judgment Mark</b> &nbsp; O : Good (ต่ำกว่า STD) &nbsp;·&nbsp; △ : Caution &nbsp;·&nbsp; X : Danger &nbsp; — เกณฑ์ตามช่อง STD ของแต่ละรายการ</span><span><b>Safety Point</b> @ ควรใช้ความระมัดระวังในการ Check</span></div>
+  <table class="sgt"><tr>${ROLES.map(r=>`<th>${r}</th>`).join('')}</tr><tr>${sg}</tr></table>
+  <div style="display:flex;justify-content:space-between;margin-top:2px"><span>วันที่บังคับใช้ : 1 มิถุนายน</span><span>แก้ไขครั้งที่ (REV.) : 01</span></div></div>`;
 }
 function buildSummaryPrint(){
   let n=0,c={O:0,D:0,X:0}; ITEMS.forEach(it=>{const j=jd(it); if(j){n++;c[j]++;}});
@@ -391,30 +401,36 @@ function buildSummaryPrint(){
   <table class="kp"><tr><th>บันทึกแล้ว</th><th>O Good</th><th>△ Caution</th><th>X Danger</th></tr>
   <tr><td>${n}/${ITEMS.length}</td><td>${c.O}</td><td>${c.D}</td><td>${c.X}</td></tr></table>
   <h4>รายการผิดปกติ (△ / X / ถึง Alarm)</h4>
-  ${ab.length?`<table><tr><th>No.</th><th>Inspection Item</th><th>Actual</th><th>Judgment</th><th>Alarm</th><th>Remark</th></tr>
+  ${ab.length?`<table class="cmp"><tr><th>No.</th><th>Inspection Item</th><th>Actual</th><th>Judgment</th><th>Alarm</th><th>Remark</th></tr>
   ${ab.map(it=>`<tr><td>${it.no}</td><td>${it.name}</td><td>${esc(st.v[it.no])} °C</td><td>${mkI(it)}</td><td>${alarmOf(it)}</td><td>${esc(st.r[it.no])}</td></tr>`).join('')}</table>`
   :'<p>ไม่มีรายการผิดปกติ</p>'}
   <h4>สรุปตามกลุ่ม</h4>
-  <table><tr><th>กลุ่ม</th><th>บันทึก</th><th>O</th><th>△</th><th>X</th></tr>${grp}</table>
+  <table class="cmp"><tr><th>กลุ่ม</th><th>บันทึก</th><th>O</th><th>△</th><th>X</th></tr>${grp}</table>
   ${signTable()}</section>`;
+}
+// ย่อหน้า Summary ให้ผลการตรวจ + ช่องลงนามอยู่ในหน้าเดียว (A4 พื้นที่พิมพ์ ~194×281mm)
+function fitOnePage(){
+  const sec=printArea.firstElementChild; if(!sec) return;
+  const mm=96/25.4, old=printArea.getAttribute('style')||'';
+  printArea.setAttribute('style','display:block;position:absolute;left:-9999px;top:0;width:'+(194*mm)+'px;font-size:9px');
+  sec.style.zoom=''; const h=sec.scrollHeight; printArea.setAttribute('style',old);
+  const max=277*mm; if(h>max) sec.style.zoom=(max/h).toFixed(3);
 }
 let printMode='full';
 function printSummary(){ printMode='summary'; window.print(); }
 window.addEventListener('afterprint',()=>{ printMode='full'; });
 window.addEventListener('beforeprint',()=>{
-  if(printMode==='summary'){ buildSummaryPrint(); return; }
+  if(printMode==='summary'){ buildSummaryPrint(); fitOnePage(); return; }
   const c=v=>v==null?'<td class="gray"></td>':`<td>${v} °C</td>`;
-  const sg=ROLES.map(r=>{const s=st.sig[r]||{}; return `<td>${s.img?`<img src="${s.img}">`:''}${esc(s.name)}<br>(${s.date||'……/……/……'})</td>`;}).join('');
   const pages=[ITEMS.filter(it=>it.no<=42), ITEMS.filter(it=>it.no>42)];
   printArea.innerHTML=pages.map((its,pi)=>`<section class="pg">
   <h2><img src="${LOGO}">Inspection Report Motor and Transformer Temp. — Line: Main motor</h2>
   <p style="display:flex;justify-content:space-between;margin:0 0 3px"><span>Date: ${st.date} &nbsp; Section: EHSM &nbsp; Shift: ${esc(st.shift)} &nbsp; Period: 1 Day</span><span>Page ${pi+1} / ${pages.length}</span></p>
-  <table><tr><th>No.</th><th>Inspection Item</th><th>Temp H.H.</th><th>Temp H.</th><th>STD</th><th>Actual</th><th>Judgment</th><th>Remark</th></tr>
+  <table class="res"><colgroup><col style="width:5%"><col style="width:37%"><col style="width:8%"><col style="width:8%"><col style="width:9%"><col style="width:8%"><col style="width:8%"><col style="width:17%"></colgroup>
+  <tr><th>No.</th><th>Inspection Item</th><th>Temp H.H.</th><th>Temp H.</th><th>STD</th><th>Actual</th><th>Judgment</th><th>Remark</th></tr>
   ${its.map(it=>`<tr><td>${it.no}</td><td>${it.name}</td>${c(it.hh)}${c(it.h)}<td>${esc(stdTxt(it))}</td><td>${esc(st.v[it.no])}</td><td>${mkI(it)}</td><td>${esc(st.r[it.no])}</td></tr>`).join('')}
   </table>
-  <table class="sgt" style="margin-top:6px"><tr><th>Judgment Mark / Safety Point</th>${ROLES.map(r=>`<th>${r}</th>`).join('')}</tr>
-  <tr><td style="text-align:left;vertical-align:top">O : Good ต่ำกว่าค่า STD<br>△ : Caution ใกล้ Alarm H<br>X : Danger ถึง Alarm H<br>@ ควรใช้ความระมัดระวังในการ Check</td>${sg}</tr></table>
-  <div style="display:flex;justify-content:space-between;margin-top:2px"><span>วันที่บังคับใช้ : 1 มิถุนายน</span><span>แก้ไขครั้งที่ (REV.) : 01</span></div>
+  ${signTable()}
   </section>`).join('');
 });
 if("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(()=>{});
