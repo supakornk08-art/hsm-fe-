@@ -102,31 +102,31 @@ details.grp summary::-webkit-details-marker{display:none}
 .bar button.pri{background:var(--brand);color:#fff}
 .sumprint{width:100%;padding:13px;border:2px solid var(--brand);border-radius:10px;background:var(--card);color:var(--brand);font-size:15px;font-weight:700;cursor:pointer}
 #printArea{display:none}
+/* print layout (ใช้วัดขนาดบนจอได้ด้วย) */
+#printArea{font-size:9px;color:#000;background:#fff;font-family:system-ui,-apple-system,"Segoe UI","Noto Sans Thai",sans-serif}
+#printArea table{width:100%;border-collapse:collapse}
+#printArea th,#printArea td{border:1px solid #000;padding:1px 3px}
+#printArea .gray{background:#777}
+#printArea h2{font-size:12px;margin:0 0 3px;display:flex;align-items:center;gap:10px}
+#printArea h2 img{height:22px}
+#printArea h4{font-size:10px;margin:6px 0 2px}
+#printArea .cmp td,#printArea .cmp th{padding:0 3px;height:14px;font-size:8.5px}
+#printArea .kp td{text-align:center;font-size:11px;font-weight:700}
+#printArea .pg{break-after:page;page-break-after:always}
+#printArea .pg:last-child{break-after:auto;page-break-after:auto}
+#printArea .res{table-layout:fixed}
+#printArea .res td{height:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#printArea .res tr{break-inside:avoid}
+#printArea .signblk{break-inside:avoid;page-break-inside:avoid;margin-top:5px}
+#printArea .legend{font-size:8.5px;border:1px solid #000;border-bottom:0;padding:2px 4px;display:flex;justify-content:space-between;gap:8px}
+#printArea .sgt{table-layout:fixed}
+#printArea .sgt th{font-size:8.5px;padding:2px}
+#printArea .sgt td{text-align:center;vertical-align:bottom;height:44px;padding:1px 2px;font-size:8px;line-height:1.15;overflow:hidden}
+#printArea .sgt img{max-height:24px;max-width:100%;display:block;margin:0 auto 1px}
 @media print{
   body{background:#fff;color:#000;font-size:9px}
   header,.wrap,.bar,.modal{display:none!important}
   #printArea{display:block}
-  #printArea table{width:100%;border-collapse:collapse}
-  #printArea th,#printArea td{border:1px solid #000;padding:1px 3px}
-  #printArea .gray{background:#777}
-  #printArea h2{font-size:12px;margin:0 0 3px;display:flex;align-items:center;gap:10px}
-  #printArea h2 img{height:22px}
-  #printArea h4{font-size:10px;margin:6px 0 2px}
-  #printArea .cmp td,#printArea .cmp th{padding:0 3px;height:14px;font-size:8.5px}
-  #printArea .kp td{text-align:center;font-size:11px;font-weight:700}
-  #printArea .pg{break-after:page;page-break-after:always}
-  #printArea .pg:last-child{break-after:auto;page-break-after:auto}
-  #printArea .res{table-layout:fixed}
-  #printArea .res td{height:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #printArea .res tr{break-inside:avoid}
-  #printArea .signblk{break-inside:avoid;page-break-inside:avoid;margin-top:5px}
-  #printArea .legend{font-size:8.5px;border:1px solid #000;border-bottom:0;padding:2px 4px;display:flex;justify-content:space-between;gap:8px}
-  #printArea .sgt{table-layout:fixed}
-  #printArea .sgt th{font-size:8.5px;padding:2px}
-  #printArea .sgt td{text-align:center;vertical-align:bottom;height:44px;padding:1px 2px;font-size:8px;line-height:1.15;overflow:hidden}
-  #printArea .sgt img{max-height:24px;max-width:100%;display:block;margin:0 auto 1px}
-  #printArea .pg{display:flex;flex-direction:column;min-height:270mm}
-  #printArea .pg .signblk{margin-top:auto;padding-top:5px}
   @page{size:A4;margin:8mm}
 }
 </style>
@@ -186,7 +186,7 @@ details.grp summary::-webkit-details-marker{display:none}
 <div class="bar">
   <button onclick="resetAll()">ล้าง</button>
   <button onclick="exportCSV()">CSV</button>
-  <button class="pri" onclick="window.print()">พิมพ์ / PDF</button>
+  <button class="pri" onclick="printFull()">พิมพ์ / PDF</button>
 </div>
 
 <div class="modal" id="modal">
@@ -409,17 +409,20 @@ function buildSummaryPrint(){
   ${signTable()}</section>`;
 }
 // ย่อหน้า Summary ให้ผลการตรวจ + ช่องลงนามอยู่ในหน้าเดียว (A4 พื้นที่พิมพ์ ~194×281mm)
+// เผื่อขอบกระดาษของแต่ละเครื่อง (Safari/Chrome มือถือใช้ขอบใหญ่กว่า @page) — วัดที่กว้าง 180mm แล้วย่อให้สูงไม่เกิน 250mm
 function fitOnePage(){
-  const sec=printArea.firstElementChild; if(!sec) return;
   const mm=96/25.4, old=printArea.getAttribute('style')||'';
-  printArea.setAttribute('style','display:block;position:absolute;left:-9999px;top:0;width:'+(194*mm)+'px;font-size:9px');
-  sec.style.zoom=''; const h=sec.scrollHeight; printArea.setAttribute('style',old);
-  const max=277*mm; if(h>max) sec.style.zoom=(max/h).toFixed(3);
+  printArea.setAttribute('style','display:block;position:absolute;left:-9999px;top:0;width:'+(180*mm)+'px');
+  [...printArea.children].forEach(sec=>{ sec.style.zoom=''; const h=sec.scrollHeight, max=250*mm;
+    sec.style.zoom = h>max ? (max/h).toFixed(3) : ''; });
+  printArea.setAttribute('style',old);
 }
 let printMode='full';
-function printSummary(){ printMode='summary'; window.print(); }
+function printSummary(){ printMode='summary'; buildPrint(); window.print(); }
+function printFull(){ printMode='full'; buildPrint(); window.print(); }
 window.addEventListener('afterprint',()=>{ printMode='full'; });
-window.addEventListener('beforeprint',()=>{
+window.addEventListener('beforeprint',buildPrint);
+function buildPrint(){
   if(printMode==='summary'){ buildSummaryPrint(); fitOnePage(); return; }
   const c=v=>v==null?'<td class="gray"></td>':`<td>${v} °C</td>`;
   const pages=[ITEMS.filter(it=>it.no<=42), ITEMS.filter(it=>it.no>42)];
@@ -432,7 +435,8 @@ window.addEventListener('beforeprint',()=>{
   </table>
   ${signTable()}
   </section>`).join('');
-});
+  fitOnePage();
+}
 if("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
 </body>
