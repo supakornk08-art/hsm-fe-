@@ -1,0 +1,15 @@
+{
+ "id": "./hpc-air.html",
+ "name": "Temperature HPC & Air Condition Check",
+ "short_name": "HPC & Air Con",
+ "lang": "th",
+ "start_url": "./hpc-air.html",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#f3f5f8",
+ "theme_color": "#0b4ea2",
+ "icons": [
+  {"src": "hpcair-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+  {"src": "hpcair-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"}
+ ]
+}
