@@ -1,0 +1,15 @@
+{
+ "id": "./earth-leak.html",
+ "name": "Inspection check earth leak Common Converter",
+ "short_name": "Earth Leak",
+ "lang": "th",
+ "start_url": "./earth-leak.html",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#f3f5f8",
+ "theme_color": "#0b4ea2",
+ "icons": [
+  {"src": "earth-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+  {"src": "earth-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"}
+ ]
+}
