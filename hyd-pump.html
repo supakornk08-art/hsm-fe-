@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hyd Pump Motor Check</title>
+<meta name="theme-color" content="#0b4ea2">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Hyd Pump">
+<link rel="manifest" href="hyd-manifest.webmanifest">
+<link rel="apple-touch-icon" href="hyd-icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="hyd-icon-192.png">
+<style>
+:root{
+  --bg:#f3f5f8; --card:#fff; --ink:#1b2430; --muted:#6b7684; --line:#dfe3e8;
+  --brand:#0b4ea2; --ok:#1e9e5a; --okbg:#e3f6ec; --warn:#c98a00; --warnbg:#fff4d6;
+  --bad:#d23a3a; --badbg:#fde5e5; --na:#c7cdd4;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11161c; --card:#1a2129; --ink:#e7ecf2; --muted:#93a0ae; --line:#2b3540;
+    --brand:#5b9bf0; --okbg:#173527; --warnbg:#3a2f12; --badbg:#3d1c1c; --na:#3a444f;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI","Noto Sans Thai",sans-serif;font-size:15px}
+header{position:sticky;top:0;z-index:10;background:var(--brand);color:#fff;padding:10px 16px 0}
+header h1{font-size:16px;margin:0}
+.hd{display:flex;align-items:center;gap:10px}
+.logo{height:30px;background:#fff;border-radius:6px;padding:3px 6px;flex:none}
+@media (max-width:480px){.hd{flex-direction:column;align-items:flex-start;gap:6px}.logo{height:28px}}
+header small{opacity:.85}
+.tabs{display:flex;gap:4px;margin-top:8px}
+.tabs button{flex:1;padding:10px;border:0;background:transparent;color:#fff;opacity:.7;font-size:14px;font-weight:700;border-bottom:3px solid transparent;cursor:pointer}
+.tabs button.on{opacity:1;border-bottom-color:#fff}
+.wrap{max-width:820px;margin:0 auto;padding:12px 16px 110px}
+.page{display:none} .page.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
+.card h3{margin:0 0 10px;font-size:15px}
+.info{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.info label{font-size:12px;color:var(--muted);display:block;margin-bottom:3px}
+.info input,.info select{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font-size:15px}
+.info .full{grid-column:1/-1}
+.sum{display:flex;gap:8px;flex-wrap:wrap}
+.pill{flex:1;min-width:70px;text-align:center;border-radius:10px;padding:8px 4px;font-weight:700;font-size:18px}
+.pill span{display:block;font-size:11px;font-weight:500}
+.p-all{background:var(--line)} .p-o{background:var(--okbg);color:var(--ok)}
+.p-d{background:var(--warnbg);color:var(--warn)} .p-x{background:var(--badbg);color:var(--bad)}
+details.grp{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden}
+details.grp summary{list-style:none;cursor:pointer;padding:12px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+details.grp summary::-webkit-details-marker{display:none}
+.cnt{font-size:12px;font-weight:600;color:var(--muted)}
+.cnt.done{color:var(--ok)}
+.item{border-top:1px solid var(--line);padding:10px 12px}
+.item .top{display:flex;gap:8px;align-items:flex-start}
+.item .nm{flex:1;font-size:13.5px;line-height:1.3;cursor:pointer}
+.item .nm b{color:var(--muted);font-weight:600;margin-right:4px}
+.item .cd{font-size:11px;color:var(--brand);font-weight:700;margin-right:4px}
+.item .lim{font-size:11px;color:var(--muted);margin-top:2px}
+.jj{display:flex;gap:6px;flex:none}
+.jw{text-align:center;font-size:10px;color:var(--muted)}
+.judge{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:800;background:var(--na);color:#fff;margin-bottom:1px}
+.judge.O{background:var(--ok)} .judge.D{background:var(--warn)} .judge.X{background:var(--bad)}
+.ins{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.ins label{display:block;font-size:10.5px;color:var(--muted);text-align:center;margin-bottom:2px}
+.ins input{width:100%;padding:9px 4px;font-size:17px;text-align:center;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+.ins .amp input{border-color:var(--brand)}
+.ins input.D{background:var(--warnbg);border-color:var(--warn)} .ins input.X{background:var(--badbg);border-color:var(--bad)}
+.item .rm{display:none;margin-top:6px}
+.item.open .rm{display:block}
+.item .rm input{width:100%;padding:7px;border:1px dashed var(--line);border-radius:8px;background:transparent;color:var(--ink);font-size:13px}
+.legend{font-size:12px;color:var(--muted);line-height:1.6}
+/* summary */
+.gl{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:13px;align-items:center}
+.prog{height:6px;background:var(--line);border-radius:3px;overflow:hidden;grid-column:1/-1;margin-bottom:6px}
+.prog i{display:block;height:100%;background:var(--ok)}
+.ab{display:grid;grid-template-columns:66px 1fr;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.ab:first-of-type{border-top:0}
+.ab .jj .judge{width:28px;height:28px;font-size:13px}
+.ab small{display:block;color:var(--muted)}
+.empty{color:var(--muted);font-size:13px}
+/* sign-off */
+.signs{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.sg{border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center;cursor:pointer;background:var(--card)}
+.sg .role{font-size:12px;font-weight:700;color:var(--brand)}
+.sg .box{height:58px;margin:6px 0;border:1px dashed var(--line);border-radius:6px;display:grid;place-items:center;color:var(--muted);font-size:12px}
+.sg .box img{max-height:54px;max-width:100%}
+.sg .nm2{font-size:12px;min-height:16px}
+.sg .dt{font-size:11px;color:var(--muted)}
+.sg.done{border-color:var(--ok);box-shadow:0 0 0 1px var(--ok) inset}
+.signcard .sub{margin:-6px 0 10px;font-size:12.5px;color:var(--muted)}
+.sgnote{font-size:12px;color:var(--muted);margin-top:8px}
+.foot{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal.on{display:flex}
+.mbox{background:var(--card);border-radius:14px;padding:14px;width:100%;max-width:440px}
+.mbox h3{margin:0 0 8px;font-size:15px}
+.mbox input{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font-size:15px;margin-bottom:8px}
+#pad{width:100%;height:170px;border:1px solid var(--line);border-radius:8px;background:#fff;touch-action:none;display:block}
+.mbtn{display:flex;gap:8px;margin-top:10px}
+.mbtn button{flex:1;padding:11px;border:0;border-radius:10px;font-weight:700;font-size:14px;background:var(--line);color:var(--ink);cursor:pointer}
+.mbtn button.pri{background:var(--brand);color:#fff}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:10px 16px;display:flex;gap:8px;justify-content:center}
+.bar button{flex:1;max-width:220px;padding:12px 6px;border:0;border-radius:10px;font-size:14px;font-weight:700;background:var(--line);color:var(--ink);cursor:pointer}
+.bar button.pri{background:var(--brand);color:#fff}
+.sumprint{width:100%;padding:13px;border:2px solid var(--brand);border-radius:10px;background:var(--card);color:var(--brand);font-size:15px;font-weight:700;cursor:pointer}
+#printArea{display:none}
+/* print layout */
+#printArea{font-size:9px;color:#000;background:#fff;font-family:system-ui,-apple-system,"Segoe UI","Noto Sans Thai",sans-serif}
+#printArea table{width:100%;border-collapse:collapse}
+#printArea th,#printArea td{border:1px solid #000;padding:1px 3px}
+#printArea h2{font-size:12px;margin:0 0 3px;display:flex;align-items:center;gap:10px}
+#printArea h2 img{height:22px}
+#printArea h4{font-size:10px;margin:6px 0 2px}
+#printArea .cmp td,#printArea .cmp th{padding:0 3px;height:14px;font-size:8.5px}
+#printArea .kp td{text-align:center;font-size:11px;font-weight:700}
+#printArea .pg{break-after:page;page-break-after:always}
+#printArea .pg:last-child{break-after:auto;page-break-after:auto}
+#printArea .res{table-layout:fixed}
+#printArea .res th{font-size:8px;padding:1px}
+#printArea .res td{height:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+#printArea .res td.l{text-align:left}
+#printArea .res tr{break-inside:avoid}
+#printArea .res tr.gh td{background:#ffeb3b;font-weight:700;text-align:left;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+#printArea .signblk{break-inside:avoid;page-break-inside:avoid;margin-top:5px}
+#printArea .legend{font-size:8.5px;border:1px solid #000;border-bottom:0;padding:2px 4px;display:flex;justify-content:space-between;gap:8px}
+#printArea .sgt{table-layout:fixed}
+#printArea .sgt th{font-size:8.5px;padding:2px}
+#printArea .sgt td{text-align:center;vertical-align:bottom;height:44px;padding:1px 2px;font-size:8px;line-height:1.15;overflow:hidden}
+#printArea .sgt img{max-height:24px;max-width:100%;display:block;margin:0 auto 1px}
+@media print{
+  body{background:#fff;color:#000;font-size:9px}
+  header,.wrap,.bar,.modal{display:none!important}
+  #printArea{display:block}
+  @page{size:A4;margin:8mm}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="hd"><img class="logo" id="logoTop" alt="NIPPON STEEL | GSteel"><div>
+  <h1>Inspection Report Motor Pump Hydraulic</h1>
+  <small>Line: HYD. ROOM · Section: EHSM · Period: 1 Day</small></div></div>
+  <div class="tabs">
+    <button class="on" data-p="pCheck">ตรวจวัด</button>
+    <button data-p="pSum">Summary</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- ===== Tab 1: Check ===== -->
+  <div class="page on" id="pCheck">
+    <div class="card info">
+      <div><label>Date</label><input type="date" id="fDate"></div>
+      <div><label>Shift</label>
+        <select id="fShift"><option value="">-</option><option>A</option><option>B</option><option>C</option><option>Day</option></select></div>
+      <div class="full"><label>Inspector</label><input id="fInsp" placeholder="ชื่อผู้ตรวจ"></div>
+    </div>
+    <div id="groups"></div>
+    <div class="card legend">
+      <b>Judgment Mark</b> (ตามแบบฟอร์ม REV.01)<br>
+      <b>Temp</b> (ใช้ค่าสูงสุดของ DE / Center / NDE): O : Good &lt;80 °C · △ : Caution 80~90 °C · X : Danger &gt;90 °C<br>
+      <b>Current</b>: O : Good ต่ำกว่า STD · △ : Caution เกิน STD · X : Danger เกิน Rate motor (ค่า A ของมอเตอร์)<br>
+      <b>Safety Point</b> @ ควรใช้ความระมัดระวังในการ Check<br>
+      วงกลม T = Judgment Temp · A = Judgment Current · แตะชื่อรายการเพื่อเพิ่ม Note
+    </div>
+    <div class="card signcard">
+      <h3>ลงนาม</h3>
+      <p class="sub">แตะช่องเพื่อเซ็นด้วยนิ้วหรือเมาส์ ลายเซ็นจะออกในใบพิมพ์ และแสดงในหน้า Summary ด้วย</p>
+      <div class="signs" id="signsCheck"></div>
+      <p class="sgnote" id="sgNote"></p>
+      <div class="foot"><span>วันที่บังคับใช้ : 1 มิถุนายน 2567</span><span>แก้ไขครั้งที่ (REV.) : 01</span></div>
+    </div>
+  </div>
+
+  <!-- ===== Tab 2: Summary ===== -->
+  <div class="page" id="pSum">
+    <div class="card">
+      <h3 id="sHead"></h3>
+      <div class="sum">
+        <div class="pill p-all" id="sAll">0/39<span>บันทึกครบ</span></div>
+        <div class="pill p-o" id="sO">0<span>O Good</span></div>
+        <div class="pill p-d" id="sD">0<span>△ Caution</span></div>
+        <div class="pill p-x" id="sX">0<span>X Danger</span></div>
+      </div>
+    </div>
+    <div class="card"><h3>ความคืบหน้าตามห้อง</h3><div class="gl" id="sGroups"></div></div>
+    <div class="card"><h3>รายการผิดปกติ (△ / X)</h3><div id="sAbn"></div></div>
+    <div class="card">
+      <h3>ลงนามรับทราบ</h3>
+      <div class="signs" id="signs"></div>
+      <div class="foot"><span>วันที่บังคับใช้ : 1 มิถุนายน 2567</span><span>แก้ไขครั้งที่ (REV.) : 01</span></div>
+    </div>
+    <button class="sumprint" onclick="printSummary()">🖨 พิมพ์ / PDF เฉพาะ Summary</button>
+  </div>
+</div>
+
+<div class="bar">
+  <button onclick="resetAll()">ล้าง</button>
+  <button onclick="exportCSV()">CSV</button>
+  <button class="pri" onclick="printFull()">พิมพ์ / PDF</button>
+</div>
+
+<div class="modal" id="modal">
+  <div class="mbox">
+    <h3 id="mRole"></h3>
+    <input id="mName" placeholder="ชื่อ-สกุล">
+    <canvas id="pad"></canvas>
+    <div class="mbtn">
+      <button onclick="padClear()">ล้างลายเซ็น</button>
+      <button onclick="closeSign()">ยกเลิก</button>
+      <button class="pri" onclick="saveSign()">บันทึก</button>
+    </div>
+  </div>
+</div>
+<div id="printArea"></div>
+
+<script>
+const LOGO='data:image/jpeg;base64,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';
+document.getElementById('logoTop').src=LOGO;
+// ---------- Master data (จากต้นแบบ REV.01) ----------
+// [code เริ่มต้น, ชื่อ, จำนวนตัว, kW, A (Rate), STD Current]
+const DATA=[
+ {g:'RM HYD. ROOM', sets:[[7138,'RM SD Hyd Main Pump',4,150,289,220],[7157,'Roll Balance Hyd Main Pump',4,75,138,100],[7175,'CB Hyd Sys. Main Pump',4,75,138,100]]},
+ {g:'FM HYD. ROOM', sets:[[7231,'Roll Balance Hyd Main Pump',7,110,214,200],[7241,'AGC Hyd Main Pump',8,150,289,220]]},
+ {g:'DC HYD. ROOM', sets:[[7310,'DC QOC Hyd Main Pump',5,150,272,220],[7340,'DC Aux Hyd Main Pump',7,75,138,100]]},
+];
+const ITEMS=[];
+DATA.forEach((G,gi)=>{let n=0; G.sets.forEach(([c0,name,cnt,kw,a,std])=>{for(let k=0;k<cnt;k++)
+  ITEMS.push({id:ITEMS.length+1,gi,no:++n,code:'AM'+(c0+k),name:name+' # '+(k+1),kw,a,std});});});
+const ROLES=['Inspector','Leader Shift','Engineer','Section Manager','Department Manager','General Manager','Senior General Manager'];
+const POS=[['de','DE'],['ce','Center'],['nde','NDE']];
+
+// ---------- Storage (draft บนเครื่อง) ----------
+const KEY='hydPumpDraft';
+let st={date:'',shift:'',insp:'',v:{},r:{},sig:{}};
+try{const s=localStorage.getItem(KEY); if(s) st=Object.assign(st,JSON.parse(s));}catch(e){}
+st.v=st.v||{}; st.r=st.r||{}; st.sig=st.sig||{};
+function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
+
+const MARK={O:'O',D:'△',X:'X'};
+// ================== เกณฑ์ Judgment (แก้ไขตรงนี้) ==================
+// Temp (ตามแบบฟอร์ม): O <80 · △ 80~90 · X >90 °C  — ใช้ค่าสูงสุดของ DE / Center / NDE
+const TEMP={c:80, d:90};
+// Current (ตามแบบฟอร์ม): O < STD · △ ≥ STD · X > Rate motor (ค่า A ของแต่ละรายการ)
+// กำหนดเฉพาะรายการ (ใส่ Code) — มีผลเหนือกฎด้านบน เช่น 'AM7138':{tc:75,td:85,std:200,rate:289}
+const OVERRIDE={};
+// =================================================================
+const num=v=>(v===''||v==null||isNaN(v))?null:+v;
+const vals=it=>st.v[it.code]||{};
+function tLim(it){const o=OVERRIDE[it.code]||{}; return {c:o.tc??TEMP.c,d:o.td??TEMP.d};}
+function aLim(it){const o=OVERRIDE[it.code]||{}; return {std:o.std??it.std,rate:o.rate??it.a};}
+function jTemp1(it,v){v=num(v); if(v==null) return ''; const L=tLim(it); return v>L.d?'X':v>=L.c?'D':'O';}
+function jT(it){const v=vals(it); const xs=POS.map(([k])=>num(v[k])).filter(x=>x!=null); return xs.length?jTemp1(it,Math.max(...xs)):'';}
+function jA(it){const v=num(vals(it).a); if(v==null) return ''; const L=aLim(it); return v>L.rate?'X':v>=L.std?'D':'O';}
+const RANK={'':0,O:1,D:2,X:3};
+function worst(it){const a=jT(it),b=jA(it); return RANK[a]>=RANK[b]?a:b;}
+function full(it){const v=vals(it); return POS.every(([k])=>num(v[k])!=null)&&num(v.a)!=null;}
+const mk=j=>j?MARK[j]:'';
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function limTxt(it){const T=tLim(it),A=aLim(it);
+  return `${it.kw} kW · ${it.a} A · Temp O &lt;${T.c} · △ ${T.c}–${T.d} · X &gt;${T.d} °C · Current STD &lt;${A.std} A · X &gt;${A.rate} A`;}
+function valTxt(it){const v=vals(it); return POS.map(([k,l])=>`${l} ${v[k]??'-'}`).join(' · ')+` °C · ${v.a??'-'} A`;}
+
+// ---------- Tabs ----------
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id===b.dataset.p));
+  if(b.dataset.p==='pSum') renderSummary();
+  window.scrollTo(0,0);
+});
+
+// ---------- Render check items ----------
+const box=document.getElementById('groups');
+DATA.forEach((G,gi)=>{
+  const d=document.createElement('details'); d.className='grp'; d.open=gi===0;
+  d.innerHTML=`<summary>${G.g}<span class="cnt" id="c${gi}"></span></summary>`;
+  ITEMS.filter(i=>i.gi===gi).forEach(it=>{
+    const v=vals(it);
+    const row=document.createElement('div'); row.className='item'; row.id='r'+it.id;
+    row.innerHTML=`<div class="top"><div class="nm"><b>${it.no}</b><span class="cd">${it.code}</span>${it.name}<div class="lim">${limTxt(it)}</div></div>
+      <div class="jj"><div class="jw"><div class="judge" id="jt${it.id}">–</div>T</div><div class="jw"><div class="judge" id="ja${it.id}">–</div>A</div></div></div>
+      <div class="ins">${POS.map(([k,l])=>`<div><label>${l} °C</label><input data-k="${k}" type="number" inputmode="decimal" step="0.1" value="${esc(v[k])}"></div>`).join('')}
+        <div class="amp"><label>Current A</label><input data-k="a" type="number" inputmode="decimal" step="0.1" value="${esc(v.a)}"></div></div>
+      <div class="rm"><input placeholder="Note" value="${esc(st.r[it.code])}"></div>`;
+    row.querySelector('.nm').onclick=()=>row.classList.toggle('open');
+    row.querySelectorAll('.ins input').forEach(inp=>inp.addEventListener('input',()=>{
+      const o=st.v[it.code]=st.v[it.code]||{}; if(inp.value==='') delete o[inp.dataset.k]; else o[inp.dataset.k]=inp.value;
+      save(); upd(it); cnt();}));
+    const rin=row.querySelector('.rm input');
+    rin.addEventListener('input',()=>{st.r[it.code]=rin.value; save();});
+    if(st.r[it.code]) row.classList.add('open');
+    d.appendChild(row);
+  });
+  box.appendChild(d);
+});
+function upd(it){
+  const t=jT(it), a=jA(it);
+  const et=document.getElementById('jt'+it.id), ea=document.getElementById('ja'+it.id);
+  et.className='judge '+t; et.textContent=t?MARK[t]:'–';
+  ea.className='judge '+a; ea.textContent=a?MARK[a]:'–';
+  document.querySelectorAll('#r'+it.id+' .ins input').forEach(inp=>{
+    const k=inp.dataset.k, j=k==='a'?a:jTemp1(it,vals(it)[k]); inp.className=(j==='D'||j==='X')?j:'';});
+}
+function cnt(){
+  DATA.forEach((G,gi)=>{const its=ITEMS.filter(i=>i.gi===gi); const f=its.filter(full).length;
+    const e=document.getElementById('c'+gi); e.textContent=f+'/'+its.length; e.classList.toggle('done',f===its.length);});
+}
+ITEMS.forEach(upd); cnt(); renderSigns();
+
+// header fields
+const fDate=document.getElementById('fDate'),fShift=document.getElementById('fShift'),fInsp=document.getElementById('fInsp');
+fDate.value=st.date||new Date(Date.now()+7*3600e3).toISOString().slice(0,10);
+fShift.value=st.shift; fInsp.value=st.insp;
+fDate.oninput=()=>{st.date=fDate.value;save()}; fShift.onchange=()=>{st.shift=fShift.value;save()};
+fInsp.oninput=()=>{st.insp=fInsp.value;save()};
+st.date=fDate.value;
+
+// ---------- Summary ----------
+function counts(its){const c={O:0,D:0,X:0}; its.forEach(it=>{const w=worst(it); if(w) c[w]++;}); return c;}
+const abnormal=()=>ITEMS.filter(it=>['D','X'].includes(jT(it))||['D','X'].includes(jA(it)));
+function renderSummary(){
+  const n=ITEMS.filter(full).length, c=counts(ITEMS);
+  sHead.textContent=`${st.date||'-'} · Shift ${st.shift||'-'} · ${st.insp||'(ยังไม่ระบุผู้ตรวจ)'}`;
+  sAll.firstChild.nodeValue=n+'/'+ITEMS.length; sO.firstChild.nodeValue=c.O; sD.firstChild.nodeValue=c.D; sX.firstChild.nodeValue=c.X;
+  sGroups.innerHTML=DATA.map((G,gi)=>{const its=ITEMS.filter(i=>i.gi===gi); const f=its.filter(full).length;
+    return `<span>${G.g}</span><span class="cnt ${f===its.length?'done':''}">${f}/${its.length}</span><div class="prog"><i style="width:${f/its.length*100}%"></i></div>`;}).join('');
+  const ab=abnormal();
+  sAbn.innerHTML=ab.length?ab.map(it=>{const t=jT(it),a=jA(it);
+    return `<div class="ab"><div class="jj"><div class="jw"><div class="judge ${t}">${mk(t)||'–'}</div>T</div><div class="jw"><div class="judge ${a}">${mk(a)||'–'}</div>A</div></div>
+      <div>${DATA[it.gi].g.split(' ')[0]} #${it.no} ${it.code} ${it.name}<small>${valTxt(it)}${st.r[it.code]?' · '+esc(st.r[it.code]):''}</small></div></div>`;}).join('')
+    :'<div class="empty">ไม่มีรายการผิดปกติ</div>';
+  renderSigns();
+}
+function renderSigns(){
+  const h=ROLES.map((r,i)=>{const s=st.sig[r]||{};
+    return `<div class="sg ${s.img?'done':''}" onclick="openSign(${i})"><div class="role">${r}</div>
+      <div class="box">${s.img?`<img src="${s.img}" alt="ลายเซ็น ${r}">`:'แตะเพื่อเซ็น'}</div>
+      <div class="nm2">${esc(s.name)}</div><div class="dt">(${s.date||'……/……/……'})</div></div>`;}).join('');
+  signs.innerHTML=h; signsCheck.innerHTML=h;
+  sgNote.textContent=`ลงนามแล้ว ${ROLES.filter(r=>st.sig[r]&&st.sig[r].img).length}/${ROLES.length} ช่อง`;
+}
+
+// ---------- Signature pad ----------
+const pad=document.getElementById('pad'), ctx=pad.getContext('2d'); let curRole=null, drawing=false, inked=false;
+function fitPad(){const r=pad.getBoundingClientRect(), d=window.devicePixelRatio||1;
+  pad.width=r.width*d; pad.height=r.height*d; ctx.setTransform(d,0,0,d,0,0);
+  ctx.lineWidth=2.2; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle='#0b2a5c'; padClear();}
+function padClear(){ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,pad.width,pad.height);ctx.restore();inked=false;}
+function pos(e){const r=pad.getBoundingClientRect(); return [e.clientX-r.left,e.clientY-r.top];}
+pad.addEventListener('pointerdown',e=>{drawing=true;inked=true;pad.setPointerCapture(e.pointerId);const[x,y]=pos(e);ctx.beginPath();ctx.moveTo(x,y);});
+pad.addEventListener('pointermove',e=>{if(!drawing)return;const[x,y]=pos(e);ctx.lineTo(x,y);ctx.stroke();});
+pad.addEventListener('pointerup',()=>drawing=false); pad.addEventListener('pointercancel',()=>drawing=false);
+function openSign(i){curRole=ROLES[i]; const s=st.sig[curRole]||{};
+  mRole.textContent='ลงนาม: '+curRole; mName.value=s.name||(curRole==='Inspector'?st.insp:'');
+  modal.classList.add('on'); fitPad();
+  if(s.img){const im=new Image(); im.onload=()=>{const r=pad.getBoundingClientRect(); ctx.drawImage(im,0,0,r.width,r.height); inked=true;}; im.src=s.img;}
+}
+function closeSign(){modal.classList.remove('on');}
+function saveSign(){
+  if(!inked){ delete st.sig[curRole]; }
+  else{ const d=new Date(); const dt=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+    st.sig[curRole]={name:mName.value.trim(),date:dt,img:pad.toDataURL('image/png')}; }
+  save(); closeSign(); renderSigns();
+}
+
+// ---------- Actions ----------
+function resetAll(){ if(!confirm('ล้างข้อมูลทั้งหมด (รวมลายเซ็น)?')) return; st.v={}; st.r={}; st.sig={}; save(); location.reload(); }
+function exportCSV(){
+  const rows=[['Date',st.date,'Section','EHSM','Shift',st.shift,'Inspector',st.insp],[],
+    ['Room','No','Code','Motor Name','kW','A','STD Temp','DE','Center','NDE','STD Current','Current(A)','Judgment Temp','Judgment Current','Note']];
+  ITEMS.forEach(it=>{const v=vals(it); rows.push([DATA[it.gi].g,it.no,it.code,it.name,it.kw,it.a,'< '+tLim(it).c+' °C',v.de??'',v.ce??'',v.nde??'','< '+aLim(it).std+' Amp',v.a??'',mk(jT(it)),mk(jA(it)),st.r[it.code]||'']);});
+  rows.push([],['Sign-off','Name','Date']); ROLES.forEach(r=>{const s=st.sig[r]||{}; rows.push([r,s.name||'',s.date||'']);});
+  const csv='﻿'+rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=`HydPump_${st.date}_${st.shift||'-'}.csv`; a.click();
+}
+// print layout (คล้ายแบบฟอร์มกระดาษ)
+function signTable(){
+  const sg=ROLES.map(r=>{const s=st.sig[r]||{}; return `<td>${s.img?`<img src="${s.img}">`:''}${esc(s.name)}<br>(${s.date||'……/……/……'})</td>`;}).join('');
+  return `<div class="signblk">
+  <div class="legend"><span><b>Judgment Mark</b> &nbsp; O : Good &nbsp; △ : Caution &nbsp; X : Danger &nbsp;·&nbsp; Temp: Good &lt;80 · Caution 80~90 · Danger &gt;90 °C &nbsp;·&nbsp; Current: Good &lt; STD · Caution &gt; STD · Danger &gt; Rate motor</span><span><b>Safety Point</b> @ ควรใช้ความระมัดระวังในการ Check</span></div>
+  <table class="sgt"><tr>${ROLES.map(r=>`<th>${r}</th>`).join('')}</tr><tr>${sg}</tr></table>
+  <div style="display:flex;justify-content:space-between;margin-top:2px"><span>วันที่บังคับใช้ : 1 มิถุนายน 2567</span><span>แก้ไขครั้งที่ (REV.) : 01</span></div></div>`;
+}
+function buildSummaryPrint(){
+  const n=ITEMS.filter(full).length, c=counts(ITEMS), ab=abnormal();
+  const grp=DATA.map((G,gi)=>{const its=ITEMS.filter(i=>i.gi===gi); const k=counts(its);
+    return `<tr><td>${G.g}</td><td>${its.filter(full).length}/${its.length}</td><td>${k.O}</td><td>${k.D}</td><td>${k.X}</td></tr>`;}).join('');
+  printArea.innerHTML=`<section>
+  <h2><img src="${LOGO}">Summary — Inspection Report Motor Pump Hydraulic (Line: HYD. ROOM)</h2>
+  <p style="margin:0 0 4px">Date: ${st.date} &nbsp; Section: EHSM &nbsp; Shift: ${esc(st.shift)} &nbsp; Period: 1 Day &nbsp; Inspector: ${esc(st.insp)}</p>
+  <table class="kp"><tr><th>บันทึกครบ</th><th>O Good</th><th>△ Caution</th><th>X Danger</th></tr>
+  <tr><td>${n}/${ITEMS.length}</td><td>${c.O}</td><td>${c.D}</td><td>${c.X}</td></tr></table>
+  <h4>รายการผิดปกติ (△ / X)</h4>
+  ${ab.length?`<table class="cmp"><tr><th>Room</th><th>No.</th><th>Code</th><th>Motor Name</th><th>DE</th><th>Center</th><th>NDE</th><th>Current(A)</th><th>Judg. Temp</th><th>Judg. Current</th><th>Note</th></tr>
+  ${ab.map(it=>{const v=vals(it); return `<tr><td>${DATA[it.gi].g}</td><td>${it.no}</td><td>${it.code}</td><td>${it.name}</td><td>${esc(v.de)}</td><td>${esc(v.ce)}</td><td>${esc(v.nde)}</td><td>${esc(v.a)}</td><td>${mk(jT(it))}</td><td>${mk(jA(it))}</td><td>${esc(st.r[it.code])}</td></tr>`;}).join('')}</table>`
+  :'<p>ไม่มีรายการผิดปกติ</p>'}
+  <h4>สรุปตามห้อง</h4>
+  <table class="cmp"><tr><th>ห้อง</th><th>บันทึกครบ</th><th>O</th><th>△</th><th>X</th></tr>${grp}</table>
+  ${signTable()}</section>`;
+}
+// ย่อให้ผลการตรวจ + ช่องลงนามอยู่ในหน้าเดียว (วัดที่กว้าง 180mm ย่อให้สูงไม่เกิน 250mm)
+function fitOnePage(){
+  const mm=96/25.4, old=printArea.getAttribute('style')||'';
+  printArea.setAttribute('style','display:block;position:absolute;left:-9999px;top:0;width:'+(180*mm)+'px');
+  [...printArea.children].forEach(sec=>{ sec.style.zoom=''; const h=sec.scrollHeight, max=250*mm;
+    sec.style.zoom = h>max ? (max/h).toFixed(3) : ''; });
+  printArea.setAttribute('style',old);
+}
+let printMode='full';
+function printSummary(){ printMode='summary'; buildPrint(); window.print(); }
+function printFull(){ printMode='full'; buildPrint(); window.print(); }
+window.addEventListener('afterprint',()=>{ printMode='full'; });
+window.addEventListener('beforeprint',buildPrint);
+function buildPrint(){
+  if(printMode==='summary'){ buildSummaryPrint(); fitOnePage(); return; }
+  const half=Math.ceil(ITEMS.length/2);
+  const pages=[ITEMS.slice(0,half), ITEMS.slice(half)];
+  const rowsOf=its=>{let last=-1; return its.map(it=>{let h='';
+    if(it.gi!==last){ last=it.gi; h=`<tr class="gh"><td></td><td></td><td colspan="12">${DATA[it.gi].g}${it.no>1?' (ต่อ)':''}</td></tr>`; }
+    const v=vals(it);
+    return h+`<tr><td>${it.no}</td><td>${it.code}</td><td class="l">${it.name}</td><td>${it.kw}</td><td>${it.a}</td><td>&lt; ${tLim(it).c} °C</td>
+      <td>${esc(v.de)}</td><td>${esc(v.ce)}</td><td>${esc(v.nde)}</td><td>&lt; ${aLim(it).std} Amp</td><td>${esc(v.a)}</td>
+      <td>${mk(jT(it))}</td><td>${mk(jA(it))}</td><td class="l">${esc(st.r[it.code])}</td></tr>`;}).join('');};
+  printArea.innerHTML=pages.map((its,pi)=>`<section class="pg">
+  <h2><img src="${LOGO}">Inspection Report Motor Pump Hydraulic — Line: HYD. ROOM</h2>
+  <p style="display:flex;justify-content:space-between;margin:0 0 3px"><span>Date: ${st.date} &nbsp; Section: EHSM &nbsp; Shift: ${esc(st.shift)} &nbsp; Period: 1 Day</span><span>Page ${pi+1} / ${pages.length}</span></p>
+  <table class="res"><colgroup><col style="width:3.5%"><col style="width:7%"><col style="width:24%"><col style="width:4.5%"><col style="width:4.5%"><col style="width:6.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:7.5%"><col style="width:6.5%"><col style="width:6%"><col style="width:6%"><col style="width:7%"></colgroup>
+  <tr><th rowspan="2">No.</th><th rowspan="2">Code</th><th rowspan="2">Motor Name</th><th rowspan="2">kW.</th><th rowspan="2">A</th><th rowspan="2">STD. Temp.</th><th colspan="3">Motor Temp. (°C)</th><th rowspan="2">STD. Current</th><th rowspan="2">Current (A)</th><th rowspan="2">Judgment Temp.</th><th rowspan="2">Judgment Current</th><th rowspan="2">NOTE</th></tr>
+  <tr><th>DE</th><th>Center</th><th>NDE</th></tr>
+  ${rowsOf(its)}
+  </table>
+  ${signTable()}
+  </section>`).join('');
+  fitOnePage();
+}
+if("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>

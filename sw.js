@@ -1,12 +1,13 @@
-// HSM Check sheets — offline cache. เปลี่ยนเลขเวอร์ชันทุกครั้งที่อัปเดตไฟล์ index.html, motor-temp.html, fault-lookup.html, flow-lube.html, descale-lube.html, cooling-fan.html หรือ mill-motor.html
-const CACHE = "hsm-check-1.13.0";
+// HSM Check sheets — offline cache. เปลี่ยนเลขเวอร์ชันทุกครั้งที่อัปเดตไฟล์ index.html, motor-temp.html, fault-lookup.html, flow-lube.html, descale-lube.html, cooling-fan.html, mill-motor.html หรือ hyd-pump.html
+const CACHE = "hsm-check-1.14.0";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png",
   "./motor-temp.html", "./motor-manifest.webmanifest", "./motor-icon-180.png", "./motor-icon-192.png", "./motor-icon-512.png",
   "./fault-lookup.html", "./fault-manifest.webmanifest", "./fault-icon-180.png", "./fault-icon-192.png", "./fault-icon-512.png",
   "./flow-lube.html", "./flow-manifest.webmanifest", "./flow-icon-180.png", "./flow-icon-192.png", "./flow-icon-512.png",
   "./descale-lube.html", "./descale-manifest.webmanifest", "./descale-icon-180.png", "./descale-icon-192.png", "./descale-icon-512.png",
   "./cooling-fan.html", "./fan-manifest.webmanifest", "./fan-icon-180.png", "./fan-icon-192.png", "./fan-icon-512.png",
-  "./mill-motor.html", "./mill-manifest.webmanifest", "./mill-icon-180.png", "./mill-icon-192.png", "./mill-icon-512.png"];
+  "./mill-motor.html", "./mill-manifest.webmanifest", "./mill-icon-180.png", "./mill-icon-192.png", "./mill-icon-512.png",
+  "./hyd-pump.html", "./hyd-manifest.webmanifest", "./hyd-icon-180.png", "./hyd-icon-192.png", "./hyd-icon-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k))))); self.clients.claim(); });
 self.addEventListener("fetch", e => {
