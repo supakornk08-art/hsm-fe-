@@ -1,0 +1,15 @@
+{
+ "id": "./descale-lube.html",
+ "name": "Motor Descaling & Oil Lube",
+ "short_name": "Descale & Lube",
+ "lang": "th",
+ "start_url": "./descale-lube.html",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#f3f5f8",
+ "theme_color": "#0b4ea2",
+ "icons": [
+  {"src": "descale-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+  {"src": "descale-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"}
+ ]
+}
