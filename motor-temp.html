@@ -85,7 +85,9 @@ details.grp summary::-webkit-details-marker{display:none}
 .sg .box img{max-height:54px;max-width:100%}
 .sg .nm2{font-size:12px;min-height:16px}
 .sg .dt{font-size:11px;color:var(--muted)}
-.sg.done{border-color:var(--ok)}
+.sg.done{border-color:var(--ok);box-shadow:0 0 0 1px var(--ok) inset}
+.signcard .sub{margin:-6px 0 10px;font-size:12.5px;color:var(--muted)}
+.sgnote{font-size:12px;color:var(--muted);margin-top:8px}
 .foot{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px}
 /* modal */
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
@@ -158,6 +160,13 @@ details.grp summary::-webkit-details-marker{display:none}
       Winding: O &lt;90 · △ 90~100 · X &gt;100 °C · Bearing / Transformer: O &lt;70 · △ 70~80 · X &gt;80 °C · Cold / Hot Air: เตือนก่อนถึง Alarm H 5 °C (ช่วงของแต่ละรายการแสดงใต้ชื่อ)<br>
       <b>Safety Point</b> @ ควรใช้ความระมัดระวังในการ Check<br>
       ตัวเลขใต้ชื่อรายการ = ค่า Alarm H / H.H. ถ้าค่าที่กรอกถึงค่านี้ จะขึ้นเตือนสีแดง · แตะชื่อรายการเพื่อเพิ่ม Remark
+    </div>
+    <div class="card signcard" id="signcard">
+      <h3>ลงนาม</h3>
+      <p class="sub">แตะช่องเพื่อเซ็นด้วยนิ้วหรือเมาส์ ลายเซ็นจะออกในใบพิมพ์ และแสดงในหน้า Summary ด้วย</p>
+      <div class="signs" id="signsCheck"></div>
+      <p class="sgnote" id="sgNote"></p>
+      <div class="foot"><span>วันที่บังคับใช้ : 1 มิถุนายน</span><span>แก้ไขครั้งที่ (REV.) : 01</span></div>
     </div>
   </div>
 
@@ -317,7 +326,7 @@ function cnt(){
   DATA.forEach((G,gi)=>{const its=ITEMS.filter(i=>i.gi===gi); const f=its.filter(i=>jd(i)).length;
     const e=document.getElementById('c'+gi); e.textContent=f+'/'+its.length; e.classList.toggle('done',f===its.length);});
 }
-ITEMS.forEach(upd); cnt();
+ITEMS.forEach(upd); cnt(); renderSigns();
 
 // header fields
 const fDate=document.getElementById('fDate'),fShift=document.getElementById('fShift'),fInsp=document.getElementById('fInsp');
@@ -342,10 +351,12 @@ function renderSummary(){
   renderSigns();
 }
 function renderSigns(){
-  signs.innerHTML=ROLES.map((r,i)=>{const s=st.sig[r]||{};
+  const h=ROLES.map((r,i)=>{const s=st.sig[r]||{};
     return `<div class="sg ${s.img?'done':''}" onclick="openSign(${i})"><div class="role">${r}</div>
-      <div class="box">${s.img?`<img src="${s.img}" alt="">`:'แตะเพื่อเซ็น'}</div>
+      <div class="box">${s.img?`<img src="${s.img}" alt="ลายเซ็น ${r}">`:'แตะเพื่อเซ็น'}</div>
       <div class="nm2">${esc(s.name)}</div><div class="dt">(${s.date||'……/……/……'})</div></div>`;}).join('');
+  signs.innerHTML=h; signsCheck.innerHTML=h;
+  sgNote.textContent=`ลงนามแล้ว ${ROLES.filter(r=>st.sig[r]&&st.sig[r].img).length}/${ROLES.length} ช่อง`;
 }
 
 // ---------- Signature pad ----------
