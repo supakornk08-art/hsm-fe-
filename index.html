@@ -107,6 +107,13 @@ main{padding-block:12px 90px}
 .seg button.on-p{background:var(--pass);color:#fff}
 .seg button.on-f{background:var(--fail);color:#fff}
 .seg button:disabled{opacity:.5;cursor:not-allowed}
+.ledbox{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;background:var(--pass-bg);border:1px solid var(--pass-line);border-radius:8px;padding:8px 10px}
+.ledbox .lt{font-size:13px;font-weight:600;color:var(--ink)}
+.ledbox .lt small{display:block;font-weight:400;color:var(--muted);font-size:11.5px}
+.led{display:flex;gap:8px}
+.led button{width:38px;height:38px;border-radius:50%;border:2px solid var(--muted);background:var(--panel);padding:0;transition:background .12s,box-shadow .12s}
+.led button.lit{background:#2fd52f;border-color:#1a9a1a;box-shadow:0 0 8px 1px rgba(47,213,47,.65), inset 0 -3px 5px rgba(0,0,0,.15)}
+.ledbox.need .lt small{color:var(--fail)}
 .failbox{grid-column:1 / -1;display:grid;gap:8px;margin-top:2px}
 .failbox textarea{width:100%;border:1px solid var(--fail-line);border-radius:8px;padding:8px 10px;min-height:44px;resize:vertical;background:var(--panel);font-size:16px}
 .fixrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -174,6 +181,22 @@ main{padding-block:12px 90px}
 .runitem small{color:var(--muted)}
 .lb{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:40;display:flex;align-items:center;justify-content:center;padding:16px}
 .lb img{max-width:100%;max-height:100%;border-radius:6px}
+/* sign-off on screen */
+.signcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:14px 0 10px}
+.signcard h3{margin:0 0 2px;font-size:15px}
+.signcard .sub{margin:0 0 10px;font-size:12.5px;color:var(--muted)}
+.signs{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.sg{border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center;cursor:pointer;background:var(--panel);font:inherit;color:var(--ink)}
+.sg .role{font-size:12px;font-weight:700;color:var(--steel)}
+.sg .box{height:58px;margin:6px 0;border:1px dashed var(--line);border-radius:6px;display:grid;place-items:center;color:var(--muted);font-size:12px;background:#fff}
+.sg .box img{max-height:54px;max-width:100%}
+.sg .nm2{font-size:12px;min-height:16px}
+.sg .dt{font-size:11px;color:var(--muted)}
+.sg.done{border-color:var(--pass);box-shadow:0 0 0 1px var(--pass) inset}
+.sgnote{font-size:12px;color:var(--muted);margin-top:8px}
+#pad{width:100%;height:170px;border:1px solid var(--line);border-radius:8px;background:#fff;touch-action:none;display:block;margin:8px 0}
+.chk{display:flex;gap:8px;align-items:center;font-size:13px;margin:4px 0 8px}
+.mbtn{display:flex;gap:8px}.mbtn .btn{flex:1}
 
 .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;font-size:14px;max-width:calc(100% - 32px);z-index:50;opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.show{opacity:1} .toast.err{background:var(--fail);color:#fff}
@@ -215,6 +238,7 @@ body{margin:0}
   #print .sum{margin:6px 0;font-size:9.5pt}
   #print .sign{margin-top:8px;page-break-inside:avoid}
   #print .sign th{font-size:8pt}
+  #print .sign td img{display:block;max-height:30px;max-width:100%;margin:0 auto 1px}
   #print .sign td{height:56px;text-align:center;vertical-align:bottom;font-size:8pt;width:14.28%}
   #print .foot{font-size:8pt;color:#555;margin-top:4px}
   #print .pk{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:4mm 0}
@@ -271,11 +295,25 @@ body{margin:0}
   </div>
 </div>
 <div class="lb" id="lb" hidden><img id="lbimg" alt="รูปประกอบ"></div>
+<div class="scrim" id="signScrim" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sgTitle">
+    <h3 id="sgTitle">ลงนาม</h3>
+    <p class="sub" id="sgSub"></p>
+    <div class="form"><label class="full">ชื่อ-สกุล <input type="text" id="sgName" autocomplete="name"></label></div>
+    <canvas id="pad" aria-label="ช่องเซ็นชื่อ ใช้นิ้วหรือเมาส์วาด"></canvas>
+    <label class="chk"><input type="checkbox" id="sgAll" checked> ใช้ลายเซ็นนี้กับทุกหัวข้อ (5 หัวข้อ) ของรอบนี้</label>
+    <div class="mbtn">
+      <button class="btn" type="button" id="sgClear">ล้างลายเซ็น</button>
+      <button class="btn" type="button" id="sgCancel">ยกเลิก</button>
+      <button class="btn primary" type="button" id="sgSave">บันทึก</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast" role="status"></div>
 <div id="print"></div>
 
 <script>
-const APP_VERSION = "1.0.0";
+const APP_VERSION = "1.1.0";
 const FORMS = [{"tab": "Startup Plant", "legacyKey": "hsm-startup-draft-v1", "config": {"formId": "HSM-STARTUP", "plant": "HSM", "sheet": "Startup", "prefix": "HSM_Startup", "title": "MACHINE CHECKLIST : PREPARE FOR STARTUP HSM PLANT", "subtitle": "Check List Startup Plant · HSM · EE"}, "checklist": [{"id": "F", "name": "อุปกรณ์หน้างาน", "en": "Field Equipment", "systems": [{"name": "TF", "items": ["Solenoid valve, Burner", "Drive Ready", "Motor Current Running"]}, {"name": "Edger", "items": ["HPC Q-Open, Q-Open reset, Zeroing", "Drive Ready", "Main Motor running, Cooling Fan Motor", "Status PT", "Cooling Water", "AWC at Screw Down Hydraulic System", "Oil Lubrication System", "HMD Status"]}, {"name": "R1, R2", "items": ["HPC Q-Open, Q-Open reset, Zeroing", "Drive Ready", "Main Motor running, Cooling Fan Motor", "Status PT", "Cooling Water", "AWC Hydraulic System", "Roll Balance Hydraulic System", "Oil Lubrication System", "RM Width Gauge Sensor, Air Cooling, Water cooling Status", "HMD Status"]}, {"name": "Coilbox", "items": ["Condition ready", "Drive Ready", "Main Motor running, Cooling Fan Motor", "CB Hydraulic System", "Cooling Water", "HMD Status"]}, {"name": "Descaling System", "items": ["Oil Lubrication System", "Motor Current", "Pressure Accumulator during Spray Function", "Temp Bearing Oil In, Out", "Water Temp Outlet", "Heat Protection Valve Function", "Motor Valve Function", "Pressure Oil Lube", "Auto Strainer"]}, {"name": "Roller table RM", "items": ["Drive Ready", "Motor Current Running"]}, {"name": "Roller table FCS", "items": ["Drive Ready", "Motor Current Running", "HMD Status"]}, {"name": "F1, F2", "items": ["HPC Q-Open, Q-Open reset, Zeroing", "Drive Ready", "Main Motor running, Cooling Fan Motor", "Status L/C", "Cooling Water", "FM AGC Hydraulic System", "FM Roll Balance Hydraulic System", "Oil Lubrication System", "Looper System (Drive, Motor, cooling Fan, Cooling Water)"]}, {"name": "Pair cross F2, F3", "items": ["Drive Ready", "Motor Current Running, Resolver", "Brake, Clutch"]}, {"name": "F3, F4", "items": ["HPC Q-Open, Q-Open reset, Zeroing", "Drive Ready", "Main Motor running, Cooling Fan Motor", "Status L/C", "Cooling Water", "FM AGC Hydraulic System", "FM Roll Balance Hydraulic System", "Oil Lubrication System", "Looper System (Drive, Motor, cooling Fan, Cooling Water)"]}, {"name": "F5, F6", "items": ["HPC Q-Open, Q-Open reset, Zeroing", "Drive Ready", "Main Motor running, Cooling Fan Motor", "Status L/C", "Cooling Water", "FM AGC Hydraulic System", "FM Roll Balance Hydraulic System", "Oil Lubrication System", "Looper System (Drive, Motor, cooling Fan, Cooling Water)", "FM Width Gauge Sensor, Air Cooling, Water cooling Status", "FM Width Gauge Status (Display, Scanner house)", "HMD Status"]}, {"name": "Profile, THK Gauge", "items": ["Water cooling", "Centerline Position", "Air Shutter, Air Blower", "Open/Close Shutter Function", "Cross Profile and THK Measurement"]}, {"name": "Flatness Gauge", "items": ["Laser Status", "Set Up data Status"]}, {"name": "Roller ROT", "items": ["Drive Ready", "Motor Current Running", "HMD Status"]}, {"name": "PR", "items": ["HPC Q-Open, Q-Open reset, Zeroing"]}, {"name": "SG", "items": ["HPC Q-Open, Q-Open reset, Zeroing"]}, {"name": "QOC", "items": ["HPC Q-Open, Q-Open reset, Zeroing", "Drive Ready", "Main Motor running, Cooling Fan Motor", "Sensor S2, S3, S4", "WR 1-3 Coupling Resolver"]}, {"name": "Banding machine", "items": ["Drive Ready", "Systems status"]}, {"name": "Walking beam", "items": ["Systems status", "1 Cycle Function"]}, {"name": "Weight DC", "items": ["Systems status"]}]}, {"id": "C", "name": "ตู้ควบคุม", "en": "Control Cabinets", "systems": [{"name": "ตู้ VM Tool TF", "items": ["Check VM Tool ต้องอยู่ RUN"]}, {"name": "ตู้ PCS 7000 Edger", "items": ["Check PCS 7000 ต้อง RUN", "Check ที่โปรแกรมต้องไม่ค้าง และไม่มี Alarm"]}, {"name": "ตู้ HPC Edger", "items": ["Check Card ICS & 486 ต้องไม่มี Fault", "Check ที่โปรแกรมต้องไม่ค้าง และไม่มี Alarm"]}, {"name": "ตู้ PCS 7000 R1-R2", "items": ["Check PCS 7000 ต้องอยู่ RUN", "Check ที่โปรแกรมต้องไม่ค้าง และไม่มี Alarm"]}, {"name": "ตู้ HPC R1-R2", "items": ["Check Card Mitsubishi PLC ต้องไม่มี Fault", "Check ที่โปรแกรมต้องไม่ค้าง และไม่มี Alarm"]}, {"name": "ตู้ PCS 7000 Coil box", "items": ["Check PCS 7000 ต้องอยู่ RUN", "Check ที่โปรแกรมต้องไม่ค้าง และไม่มี Alarm"]}, {"name": "ตู้ PCS 7000 F1-F6", "items": ["Check PCS 7000 ต้องอยู่ RUN", "Check ที่โปรแกรมต้องไม่ค้าง และไม่มี Alarm"]}, {"name": "ตู้ HPC F1-F6", "items": ["Check Card ICS & 486 ต้องไม่มี Fault", "Check ที่โปรแกรมต้องไม่ค้าง และไม่มี Alarm"]}, {"name": "ตู้ VM Tool PR", "items": ["Check VM Tool ต้องอยู่ RUN", "Check ที่โปรแกรมต้องไม่ค้าง และไม่มี Alarm"]}, {"name": "ตู้ HPC PR", "items": ["Check Card ICS & 486 ต้องไม่มี Fault", "Check ที่โปรแกรมต้องไม่ค้าง และไม่มี Alarm"]}, {"name": "ตู้ VM Tool SG", "items": ["Check VM Tool ต้องอยู่ RUN", "Check ที่โปรแกรมต้องไม่ค้าง และไม่มี Alarm"]}, {"name": "ตู้ HPC SG", "items": ["Check Card ICS & 486 ต้องไม่มี Fault", "Check ที่โปรแกรมต้องไม่ค้าง และไม่มี Alarm"]}, {"name": "ตู้ VM Tool QOC", "items": ["Check VM Tool ต้องอยู่ RUN", "Check ที่โปรแกรมต้องไม่ค้าง และไม่มี Alarm"]}, {"name": "ตู้ HPC QOC", "items": ["Check Card ICS & 486 ต้องไม่มี Fault", "Check ที่โปรแกรมต้องไม่ค้าง และไม่มี Alarm"]}, {"name": "ตู้ PLC Banding machine", "items": ["Check PLC ต้องอยู่ RUN", "Check ที่โปรแกรมต้องไม่ค้าง และไม่มี Alarm"]}]}]}, {"tab": "CMD", "legacyKey": "draft-HSM-SENSOR-CMD-v1", "config": {"formId": "HSM-SENSOR-CMD", "plant": "HSM", "sheet": "CMD", "prefix": "HSM_CMD", "title": "MACHINE CHECKLIST : PREPARE FOR STARTUP HSM", "subtitle": "ตารางตรวจเช็ค Status Tracking Sensor CMD"}, "checklist": [{"id": "S", "name": "ตารางตรวจเช็ค Status Tracking Sensor CMD", "en": "Status Tracking Sensor CMD", "systems": [{"name": "Heating Zone", "items": [{"tag": "PH3101", "txt": "Heating Zone1-1 Tracking", "na": "ยกเลิกใช้งาน"}, {"tag": "PH3102", "txt": "Heating Zone1-2 Tracking", "na": "Force Off"}, {"tag": "PH3201", "txt": "Heating Zone2-1 Tracking"}, {"tag": "PH3301", "txt": "Heating Zone3-1 Tracking"}]}, {"name": "Buffer Zone", "items": [{"tag": "PH3401", "txt": "Buffer Zone1-1 Tracking"}, {"tag": "PH3402", "txt": "Buffer Zone1-2 Tracking"}, {"tag": "PH3403", "txt": "Buffer Zone1-3 Tracking"}, {"tag": "PH3501", "txt": "Buffer Zone2-1 Tracking"}, {"tag": "PH3502", "txt": "Buffer Zone2-2 Tracking"}, {"tag": "PH3503", "txt": "Buffer Zone2-3 Tracking"}, {"tag": "PH3504", "txt": "Buffer Zone2-4 Tracking"}]}, {"name": "Shifter Zone", "items": [{"tag": "PH3601", "txt": "Shifter Zone1 Tracking"}, {"tag": "PH3602", "txt": "Shifter Zone2 Tracking"}, {"tag": "PH3603", "txt": "Shifter Zone3 Tracking"}, {"tag": "PH3604", "txt": "Shifter Zone4 Tracking"}]}, {"name": "Delivery Zone", "items": [{"tag": "PH3701", "txt": "Delivery Zone1 Tracking"}, {"tag": "PH3702", "txt": "Delivery Zone2 Tracking"}, {"tag": "PH3703", "txt": "Delivery Zone3 Tracking"}, {"tag": "PH3704", "txt": "Delivery Zone4 Tracking"}]}]}]}, {"tab": "HMD", "legacyKey": "draft-HSM-SENSOR-HMD-v1", "config": {"formId": "HSM-SENSOR-HMD", "plant": "HSM", "sheet": "HMD", "prefix": "HSM_HMD", "title": "MACHINE CHECKLIST : PREPARE FOR STARTUP HSM", "subtitle": "ตารางตรวจเช็ค Status Tracking Sensor HMD"}, "checklist": [{"id": "S", "name": "ตารางตรวจเช็ค Status Tracking Sensor HMD", "en": "Status Tracking Sensor HMD", "systems": [{"name": "Roughing Mill (R1, R2)", "items": [{"tag": "HMD4024", "txt": "R1 Entry Side Guide Tracking"}, {"tag": "HMD4027", "txt": "R1 Entry Table Tracking"}, {"tag": "HMD4195", "txt": "R2 Delivery Table Tracking"}]}, {"name": "Coilbox", "items": [{"tag": "HMD4222", "txt": "C/B Entry D/R Tracking"}, {"tag": "HMD4234", "txt": "C/B No.1 C/R Tracking"}, {"tag": "HMD4275", "txt": "C/B No.2 C/R Tracking"}, {"tag": "HMD4277", "txt": "C/B P/R Tracking"}]}, {"name": "FCS / F1 Entry", "items": [{"tag": "HMD4290", "txt": "FCS Entry S/G Tracking"}, {"tag": "HMD4291", "txt": "FCS Entry S/G Tracking"}, {"tag": "HMD5000", "txt": "F1 Entry Tracking"}]}, {"name": "Down Coiler (DC1)", "items": [{"tag": "HMD6212", "txt": "DC1 S/G Tracking"}, {"tag": "HMD6213", "txt": "DC1 S/G(Stand by) Tracking"}, {"tag": "HMD6448", "txt": "DC1 P/R Tracking"}, {"tag": "HMD6449", "txt": "DC1 P/R(Stand by) Tracking"}]}]}]}, {"tab": "Photo Sensor", "legacyKey": "draft-HSM-SENSOR-PHOTO-v1", "config": {"formId": "HSM-SENSOR-PHOTO", "plant": "HSM", "sheet": "Photo", "prefix": "HSM_Photo", "title": "MACHINE CHECKLIST : PREPARE FOR STARTUP HSM", "subtitle": "ตารางตรวจเช็ค Status Tracking Sensor Photo sensor"}, "checklist": [{"id": "S", "name": "ตารางตรวจเช็ค Status Tracking Sensor Photo sensor", "en": "Status Tracking Sensor Photo sensor", "systems": [{"name": "QOC", "items": [{"tag": "S2", "txt": "QOC SYS Head Detect (Center)"}, {"tag": "S3", "txt": "QOC SYS Head Detect (WS)"}, {"tag": "S4", "txt": "QOC SYS Head Detect (DS)"}]}, {"name": "Down Coiler (DC1)", "items": [{"tag": "PH6600", "txt": "DC1 Stripper Car(Bander) Tracking"}, {"tag": "PH6610", "txt": "DC1 Coil EV Lower (ST 0) Tracking"}, {"tag": "PH6611", "txt": "DC1 T-Car (Station IM) Tracking"}, {"tag": "PH6632", "txt": "DC1 WB (Coil Scale) Tracking"}, {"tag": "PH6633", "txt": "DC1 WB (Marking) Tracking"}, {"tag": "PH6635", "txt": "DC1 WB Saddle #4"}, {"tag": "PH6636", "txt": "DC1 WB Saddle #5"}, {"tag": "PH6637", "txt": "DC1 WB Saddle #6"}, {"tag": "PH6638", "txt": "DC1 WB Saddle #7"}, {"tag": "PH6634", "txt": "DC1 WB Saddle #8"}]}]}]}, {"tab": "Pyrometer", "legacyKey": "draft-HSM-SENSOR-PYROMETER-v1", "config": {"formId": "HSM-SENSOR-PYROMETER", "plant": "HSM", "sheet": "Pyrometer", "prefix": "HSM_Pyrometer", "title": "MACHINE CHECKLIST : PREPARE FOR STARTUP HSM", "subtitle": "ตารางตรวจเช็ค Status Pyrometer"}, "checklist": [{"id": "S", "name": "ตารางตรวจเช็ค Status Pyrometer", "en": "Status Pyrometer", "systems": [{"name": "Pyrometer", "items": [{"tag": "PY4210", "txt": "RET"}, {"tag": "PY4220", "txt": "R2DT-A"}, {"tag": "PY4221", "txt": "R2DT-B"}, {"tag": "PY4290", "txt": "FET"}, {"tag": "PY6210", "txt": "FDT-A"}, {"tag": "PY6211", "txt": "FDT-B"}, {"tag": "PY6212", "txt": "CT-A"}, {"tag": "PY6213", "txt": "CT-B"}]}]}]}];
 const SUMMARY = "SUMMARY";
 const SIGNERS = ["Inspector","Leader Shift","Engineer","Section Manager","Department Manager","General Manager","Senior General Manager"];
@@ -299,6 +337,9 @@ FORMS.forEach(f => {
 const ALL_ITEMS = FORMS.flatMap(f => f.items);
 const ITEM = Object.fromEntries(ALL_ITEMS.map(i => [i.key, i]));
 const formOf = id => FORMS.find(f=>f.config.formId===id);
+const LED_FORMS = ["HSM-SENSOR-CMD"];   // Tab ที่ต้องกรอกจำนวนไฟ Detect เมื่อ PASS
+const dots = n => "●".repeat(n)+"○".repeat(5-n);
+const ledTxt = r => r && r.s==="P" && r.led ? `ไฟ Detect ${dots(r.led)} (${r.led} ดวง)` : "";
 
 /* ---------- photo store (IndexedDB) ---------- */
 const PH = {
@@ -317,7 +358,9 @@ async function hydrateImgs(root){
 /* ---------- state ---------- */
 const S = { runs: ls.get("hsm.runs")||[], runId: ls.get("hsm.run"), results:{}, view: ls.get("hsm.view")||FORMS[0].config.formId, filter:"all" };
 const curRun = () => S.runs.find(r=>r.id===S.runId);
-function loadResults(){ S.results = (S.runId && ls.get("hsm.res."+S.runId)) || {}; }
+function loadResults(){ S.results = (S.runId && ls.get("hsm.res."+S.runId)) || {}; S.sig = (S.runId && ls.get("hsm.sig."+S.runId)) || {}; }
+function saveSig(){ if(S.runId) ls.set("hsm.sig."+S.runId, S.sig); }
+const sigOf=(fid,role)=>((S.sig||{})[fid]||{})[role];
 function saveResults(){ if(S.runId) ls.set("hsm.res."+S.runId, S.results); }
 function saveRuns(){ ls.set("hsm.runs", S.runs); }
 
@@ -369,6 +412,7 @@ function render(){
         html+=`<div class="item" data-key="${esc(it.key)}">
           <div class="txt"><span class="no">${n}</span><span class="lab">${lab}<span class="by"></span></span></div>
           <span class="seg" role="group" aria-label="ผลการตรวจ"><button type="button" data-v="P">PASS</button><button type="button" data-v="F">FAIL</button></span>
+          ${LED_FORMS.includes(it.form)?`<div class="ledbox" hidden><span class="lt">ไฟ Detect ที่ Transmitter<small></small></span><span class="led" role="group" aria-label="จำนวนไฟ Detect">${[1,2,3,4,5].map(n=>`<button type="button" data-led="${n}" aria-label="ไฟติด ${n} ดวง"></button>`).join("")}</span></div>`:""}
           <div class="failbox" hidden>
             <textarea id="rm-${esc(it.key)}" placeholder="อาการที่พบ เช่น Drive trip, Sensor สกปรก" aria-label="Remark"></textarea>
             <div class="fixrow">
@@ -382,6 +426,7 @@ function render(){
       html+=`</details>`;
     });
   });
+  html+=signCardHTML(f);
   $("#view").innerHTML=html;
   f.items.forEach(it=>{ if(!it.na) updateItem(it.key); });
   updateGroups(); updateProgress(); applyFilter();
@@ -395,6 +440,10 @@ function updateItem(key){
   bp.className=r.s==="P"?"on-p":""; bf.className=r.s==="F"?"on-f":"";
   bp.setAttribute("aria-pressed", r.s==="P"); bf.setAttribute("aria-pressed", r.s==="F");
   const fb=row.querySelector(".failbox"); fb.hidden = r.s!=="F";
+  const lb=row.querySelector(".ledbox");
+  if(lb){ lb.hidden = r.s!=="P"; lb.classList.toggle("need", r.s==="P" && !r.led);
+    lb.querySelector("small").textContent = r.led ? `ติด ${dots(r.led)} (${r.led} ดวง)` : "แตะดวงสุดท้ายที่ติด (1–5)";
+    lb.querySelectorAll("[data-led]").forEach(b=>{ const n=+b.dataset.led; b.classList.toggle("lit", !!r.led && n<=r.led); b.setAttribute("aria-pressed", n===r.led); }); }
   const ta=fb.querySelector("textarea"); if(document.activeElement!==ta && ta.value!==(r.remark||"")) ta.value=r.remark||"";
   fb.querySelectorAll(".fix button").forEach(b=>{ b.className = r.fix===b.dataset.fix ? "on-"+b.dataset.fix : ""; b.setAttribute("aria-pressed", r.fix===b.dataset.fix); });
   const th=fb.querySelector(".thumbs");
@@ -433,7 +482,7 @@ function setResult(key, body){
 }
 function bodyFor(key, patch){
   const it=ITEM[key], prev=S.results[key]||{}, run=curRun()||{};
-  return { form:it.form, item:it.id, s:prev.s, remark:prev.remark||"", fix:prev.fix||"", photos:prev.photos||[], ...patch, by:run.inspector||"", at:new Date().toISOString() };
+  return { form:it.form, item:it.id, s:prev.s, remark:prev.remark||"", fix:prev.fix||"", photos:prev.photos||[], led:prev.led||null, ...patch, by:run.inspector||"", at:new Date().toISOString() };
 }
 const remarkTimers={};
 $("#view").addEventListener("click", e=>{
@@ -446,9 +495,10 @@ $("#view").addEventListener("click", e=>{
   if(v){ if(needRun()) return;
     const cur=(S.results[key]||{}).s;
     if(cur===v.dataset.v){ setResult(key,null); return; }
-    setResult(key, v.dataset.v==="P" ? bodyFor(key,{s:"P",remark:"",fix:"",photos:[]}) : bodyFor(key,{s:"F"}));
+    setResult(key, v.dataset.v==="P" ? bodyFor(key,{s:"P",remark:"",fix:"",photos:[]}) : bodyFor(key,{s:"F",led:null}));
     if(v.dataset.v==="F") setTimeout(()=>row.querySelector("textarea").focus(),50);
     return; }
+  const ld=e.target.closest("[data-led]"); if(ld){ const n=+ld.dataset.led; setResult(key, bodyFor(key,{led:(S.results[key]||{}).led===n?null:n})); return; }
   const fx=e.target.closest(".fix button"); if(fx){ setResult(key, bodyFor(key,{fix:fx.dataset.fix})); return; }
   const rm=e.target.closest("[data-rmphoto]");
   if(rm){ const r=S.results[key]; setResult(key, bodyFor(key,{photos:(r.photos||[]).filter(x=>x!==rm.dataset.rmphoto)})); PH.del(rm.dataset.rmphoto); }
@@ -531,6 +581,8 @@ function renderSummary(){
     }));
     h+=`</div>`;
   });
+  h+=`<div class="h2">ลงนามแต่ละหัวข้อ <small>แตะเพื่อไปเซ็นท้าย Tab นั้น</small></div><div class="scard">${FORMS.map(f=>{ const n=SIGNERS.filter(r=>sigOf(f.config.formId,r)).length;
+      return `<div class="srow head" data-go="${f.config.formId}#sign"><span class="nm">${esc(f.tab)}</span><span class="pct"><b>${n}/${SIGNERS.length}</b> <span class="cnt">ลงนามแล้ว</span></span></div>`; }).join("")}</div>`;
   h+=`<div class="tools"><button class="btn" type="button" data-act="printForm">พิมพ์ใบ checklist ทุก Tab</button><span class="spacer"></span>
       ${run?`<button class="btn danger" type="button" data-act="delRun">ลบรอบนี้ออกจากเครื่อง</button>`:""}</div>
     <p class="note">ข้อมูลทั้งหมดเก็บในเครื่องนี้เท่านั้น หลังเช็คเสร็จให้กด "แชร์ผลรอบนี้" ส่งเข้าไลน์ทุกครั้ง เพื่อเก็บไว้เป็นหลักฐานและสำรองข้อมูล</p>
@@ -541,6 +593,7 @@ function renderSummary(){
 $("#view").addEventListener("keydown", e=>{ if((e.key==="Enter"||e.key===" ") && e.target.matches(".fcard")){ e.preventDefault(); jumpTo(e.target.dataset.go); } });
 $("#view").addEventListener("change", e=>{ if(e.target.id==="impFile") importFiles([...e.target.files]).finally(()=>{ e.target.value=""; }); });
 function jumpTo(target){
+  if(target.endsWith("#sign")){ setView(target.slice(0,-5)); const c=document.getElementById("signcard"); if(c) c.scrollIntoView({block:"start"}); return; }
   if(ITEM[target]){
     setView(ITEM[target].form);
     const row=document.querySelector(`.item[data-key="${CSS.escape(target)}"]`);
@@ -554,16 +607,16 @@ async function dataURLToBlob(u){ return (await fetch(u)).blob(); }
 function csvText(){
   const run=curRun()||{};
   const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
-  const rows=[["Date","Shift","Tab","Group","Symbol","Check Item","Result","Remark","Fix Status","Inspector","Checked At","Photos"]];
+  const rows=[["Date","Shift","Tab","Group","Symbol","Check Item","Result","Remark","Fix Status","LED Detect (1-5)","Inspector","Checked At","Photos"]];
   ALL_ITEMS.forEach(i=>{ const r=S.results[i.key]||{};
     rows.push([run.date,run.shift,formOf(i.form).tab,i.sys,i.tag,i.txt, i.na?"N/A":r.s==="P"?"PASS":r.s==="F"?"FAIL":"", i.na?i.na:(r.remark||""),
-      r.fix==="done"?"แก้ไขแล้ว":r.fix==="open"?"ยังไม่แก้ไข":"", r.by||"", r.at||"", (r.photos||[]).length]); });
+      r.fix==="done"?"แก้ไขแล้ว":r.fix==="open"?"ยังไม่แก้ไข":"", (r.s==="P"&&r.led)||"", r.by||"", r.at||"", (r.photos||[]).length]); });
   return "﻿"+rows.map(r=>r.map(q).join(",")).join("\r\n");
 }
 async function packJSON(){
   const run=curRun(); const photos={};
   for(const r of Object.values(S.results)) for(const id of (r.photos||[])){ const b=await PH.get(id); if(b) photos[id]=await blobToDataURL(b); }
-  return JSON.stringify({ app:"HSM-STARTUP-CHECK", version:1, run, results:S.results, photos, exportedAt:new Date().toISOString() });
+  return JSON.stringify({ app:"HSM-STARTUP-CHECK", version:1, run, results:S.results, sig:S.sig||{}, photos, exportedAt:new Date().toISOString() });
 }
 function fileBase(){ const r=curRun(); return `HSM_${(r.date||"").replace(/-/g,"")}_${r.shift}_${(r.inspector||"").trim().replace(/[\\/:*?"<>|\s]+/g,"_")}_${stamp()}`; }
 function saveFile(name, blob){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000); }
@@ -586,7 +639,7 @@ const actions = {
   delRun(btn){
     if(!btn.classList.contains("armed")){ btn.classList.add("armed"); btn.textContent="แตะอีกครั้งเพื่อยืนยันการลบ"; setTimeout(()=>{ if(btn.isConnected){ btn.classList.remove("armed"); btn.textContent="ลบรอบนี้ออกจากเครื่อง"; } }, 4000); return; }
     const run=curRun(); Object.values(S.results).forEach(r=>(r.photos||[]).forEach(id=>PH.del(id)));
-    try{ localStorage.removeItem("hsm.res."+run.id); }catch(e){}
+    try{ localStorage.removeItem("hsm.res."+run.id); localStorage.removeItem("hsm.sig."+run.id); }catch(e){}
     S.runs=S.runs.filter(r=>r.id!==run.id); saveRuns(); S.runId=null; ls.set("hsm.run", null); S.results={};
     runLabel(); render(); toast("ลบรอบตรวจแล้ว");
   }
@@ -603,6 +656,9 @@ async function importFiles(files){
       const mine=ls.get("hsm.res."+run.id)||{};
       for(const [k,r] of Object.entries(d.results)){ if(!ITEM[k]) continue; const cur=mine[k]; if(!cur || (r.at||"")>(cur.at||"")){ mine[k]=r; added++; } }
       ls.set("hsm.res."+run.id, mine);
+      const ms=ls.get("hsm.sig."+run.id)||{};
+      for(const [fid,roles] of Object.entries(d.sig||{})) for(const [role,s] of Object.entries(roles||{})){ ms[fid]=ms[fid]||{}; const c=ms[fid][role]; if(!c || (s.at||"")>(c.at||"")) ms[fid][role]=s; }
+      ls.set("hsm.sig."+run.id, ms);
       selectRun(run.id, true); n++;
     }catch(e){ toast(`เปิดไฟล์ ${f.name} ไม่ได้ ต้องเป็นไฟล์ .json ที่แชร์จากแอปนี้`, true); }
   }
@@ -612,7 +668,8 @@ async function importFiles(files){
 /* ---------- print ---------- */
 const logoHTML=()=>`<div class="plogo"><img src="${$(".logo img").src}" alt=""></div>`;
 function metaHTML(){ const r=curRun()||{}; return `<div class="pm"><span><b>วันที่:</b> ${thDate(r.date)}</span><span><b>กะ:</b> ${esc(r.shift||"-")}</span><span><b>ผู้ตรวจ:</b> ${esc(inspectors().join(", ")||r.inspector||"-")}</span></div>`; }
-function signHTML(){ return `<table class="sign"><tr>${SIGNERS.map(n=>`<th>${n}</th>`).join("")}</tr><tr>${SIGNERS.map(()=>`<td>(......../......../........)</td>`).join("")}</tr></table>`; }
+function signHTML(fid){ return `<table class="sign"><tr>${SIGNERS.map(n=>`<th>${n}</th>`).join("")}</tr><tr>${SIGNERS.map(r=>{ const s=fid?sigOf(fid,r):null;
+    return s?`<td><img src="${s.img}" alt="">${esc(s.name)}<br>(${esc(s.date)})</td>`:`<td>(......../......../........)</td>`; }).join("")}</tr></table>`; }
 async function buildPrintForms(){
   let h="";
   FORMS.forEach((f,fi)=>{
@@ -624,7 +681,7 @@ async function buildPrintForms(){
         const r=S.results[i.key]||{}, fl=r.s==="F", na=!!i.na;
         if(hasTag && f.checklist[0].systems.length>1 && i.sys!==last) rows+=`<tr class="cap"><td colspan="5">${esc(i.sys)}</td></tr>`;
         const c1=hasTag?esc(i.tag):(i.sys!==last?esc(i.sys):"");
-        const rem=na?"ไม่ใช้งาน: "+i.na:fl?`${r.remark||""}${r.fix?` (${r.fix==="done"?"แก้ไขแล้ว":"ยังไม่แก้ไข"})`:""}`:"";
+        const rem=na?"ไม่ใช้งาน: "+i.na:fl?`${r.remark||""}${r.fix?` (${r.fix==="done"?"แก้ไขแล้ว":"ยังไม่แก้ไข"})`:""}`:(LED_FORMS.includes(i.form)&&r.s==="P"?(ledTxt(r)||"ไฟ Detect ○○○○○ (……ดวง)"):"");
         const box=v=>na?"–":(r.s===v?"☑":"☐");
         rows+=`<tr class="${fl?"f":na?"na":""}"><td class="g">${c1}</td><td>${esc(i.txt)}</td><td class="c">${box("P")}</td><td class="c">${box("F")}</td><td>${esc(rem)}</td></tr>`;
         last=i.sys;
@@ -633,7 +690,7 @@ async function buildPrintForms(){
     const c=tally(act(f.items));
     h+=`<section style="${fi?"page-break-before:always;":""}position:relative">${logoHTML()}<h1>${esc(f.config.title)}</h1><h2>${esc(f.config.subtitle)}</h2>${metaHTML()}
       <table><thead><tr><th>${hasTag?"Symbol Name":"System"}</th><th>${hasTag?"Description Location":"Check Items"}</th><th>PASS</th><th>FAIL</th><th>Remark</th></tr></thead><tbody>${rows}</tbody></table>
-      <div class="sum"><b>สรุป:</b> ${c.total} ข้อ · PASS ${c.pass} · FAIL ${c.fail} (ยังไม่แก้ไข ${c.open}) · ยังไม่เช็ค ${c.left}</div>${signHTML()}
+      <div class="sum"><b>สรุป:</b> ${c.total} ข้อ · PASS ${c.pass} · FAIL ${c.fail} (ยังไม่แก้ไข ${c.open}) · ยังไม่เช็ค ${c.left}</div>${signHTML(f.config.formId)}
       <div class="foot">** ถ้าตรวจพบความผิดปกติใดๆ ให้เขียนระบุอาการลงในช่อง Remark และระบุด้วยว่าได้รับการแก้ไขแล้วหรือยังไม่แก้ไข **</div></section>`;
   });
   $("#print").innerHTML=h;
@@ -685,6 +742,45 @@ $("#runForm").addEventListener("submit", e=>{
   selectRun(id); closeRunSheet(); toast(`เปิดรอบ ${thDate(date)} กะ ${shift} แล้ว`);
 });
 function selectRun(id, quiet){ S.runId=id; ls.set("hsm.run", id); loadResults(); runLabel(); if(!quiet) render(); }
+
+/* ---------- sign-off (on screen) ---------- */
+function signCardHTML(f){
+  const fid=f.config.formId;
+  return `<section class="signcard" id="signcard"><h3>ลงนาม · ${esc(f.tab)}</h3><p class="sub">แตะช่องเพื่อเซ็นด้วยนิ้วหรือเมาส์ ลายเซ็นจะออกในใบพิมพ์ท้ายหัวข้อนี้</p>
+    <div class="signs">${SIGNERS.map((r,i)=>{ const s=sigOf(fid,r);
+      return `<button type="button" class="sg${s?" done":""}" data-sign="${i}"><div class="role">${r}</div><div class="box">${s?`<img src="${s.img}" alt="ลายเซ็น ${r}">`:"แตะเพื่อเซ็น"}</div><div class="nm2">${esc(s?s.name:"")}</div><div class="dt">(${s?esc(s.date):"……/……/……"})</div></button>`; }).join("")}</div>
+    <p class="sgnote">ลงนามแล้ว ${SIGNERS.filter(r=>sigOf(fid,r)).length}/${SIGNERS.length} ช่อง</p></section>`;
+}
+const pad=document.getElementById("pad"), pctx=pad.getContext("2d"); let sgRole=null, drawing=false, inked=false;
+function fitPad(){ const r=pad.getBoundingClientRect(), d=window.devicePixelRatio||1; pad.width=r.width*d; pad.height=r.height*d; pctx.setTransform(d,0,0,d,0,0);
+  pctx.lineWidth=2.2; pctx.lineCap="round"; pctx.lineJoin="round"; pctx.strokeStyle="#0b2a5c"; padClear(); }
+function padClear(){ pctx.save(); pctx.setTransform(1,0,0,1,0,0); pctx.clearRect(0,0,pad.width,pad.height); pctx.restore(); inked=false; }
+const ppos=e=>{ const r=pad.getBoundingClientRect(); return [e.clientX-r.left, e.clientY-r.top]; };
+pad.addEventListener("pointerdown",e=>{ drawing=true; inked=true; pad.setPointerCapture(e.pointerId); const [x,y]=ppos(e); pctx.beginPath(); pctx.moveTo(x,y); });
+pad.addEventListener("pointermove",e=>{ if(!drawing) return; const [x,y]=ppos(e); pctx.lineTo(x,y); pctx.stroke(); });
+["pointerup","pointercancel"].forEach(ev=>pad.addEventListener(ev,()=>drawing=false));
+$("#view").addEventListener("click", e=>{ const b=e.target.closest("[data-sign]"); if(b) openSign(+b.dataset.sign); });
+function openSign(i){
+  if(needRun()) return;
+  sgRole=SIGNERS[i]; const f=formOf(S.view), s=sigOf(f.config.formId, sgRole), run=curRun()||{};
+  $("#sgTitle").textContent="ลงนาม: "+sgRole; $("#sgSub").textContent=`${f.tab} · รอบ ${thDate(run.date)} กะ ${run.shift||"-"}`;
+  $("#sgName").value = s ? s.name : (sgRole==="Inspector" ? (run.inspector||"") : "");
+  $("#signScrim").hidden=false; fitPad();
+  if(s){ const im=new Image(); im.onload=()=>{ const r=pad.getBoundingClientRect(); pctx.drawImage(im,0,0,r.width,r.height); inked=true; }; im.src=s.img; }
+}
+function closeSign(){ $("#signScrim").hidden=true; }
+$("#sgClear").addEventListener("click", padClear);
+$("#sgCancel").addEventListener("click", closeSign);
+$("#signScrim").addEventListener("click", e=>{ if(e.target.id==="signScrim") closeSign(); });
+$("#sgSave").addEventListener("click", ()=>{
+  const targets = $("#sgAll").checked ? FORMS.map(f=>f.config.formId) : [S.view];
+  const d=new Date(), dt=`${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
+  const rec = inked ? { name:$("#sgName").value.trim(), date:dt, img:pad.toDataURL("image/png"), at:d.toISOString() } : null;
+  S.sig=S.sig||{};
+  targets.forEach(fid=>{ S.sig[fid]=S.sig[fid]||{}; if(rec) S.sig[fid][sgRole]=rec; else delete S.sig[fid][sgRole]; });
+  saveSig(); closeSign(); render(); const c=document.getElementById("signcard"); if(c) c.scrollIntoView({block:"start"});
+  toast(rec ? (targets.length>1 ? `บันทึกลายเซ็น ${sgRole} ทั้ง ${targets.length} หัวข้อแล้ว` : `บันทึกลายเซ็น ${sgRole} แล้ว`) : `ลบลายเซ็น ${sgRole} แล้ว`);
+});
 
 /* ---------- boot ---------- */
 if(S.runId && !curRun()) S.runId=null;
