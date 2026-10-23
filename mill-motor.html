@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mill Motor Check</title>
+<meta name="theme-color" content="#0b4ea2">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mill Motor">
+<link rel="manifest" href="mill-manifest.webmanifest">
+<link rel="apple-touch-icon" href="mill-icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="mill-icon-192.png">
+<style>
+:root{
+  --bg:#f3f5f8; --card:#fff; --ink:#1b2430; --muted:#6b7684; --line:#dfe3e8;
+  --brand:#0b4ea2; --ok:#1e9e5a; --okbg:#e3f6ec; --warn:#c98a00; --warnbg:#fff4d6;
+  --bad:#d23a3a; --badbg:#fde5e5; --na:#c7cdd4;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11161c; --card:#1a2129; --ink:#e7ecf2; --muted:#93a0ae; --line:#2b3540;
+    --brand:#5b9bf0; --okbg:#173527; --warnbg:#3a2f12; --badbg:#3d1c1c; --na:#3a444f;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI","Noto Sans Thai",sans-serif;font-size:15px}
+header{position:sticky;top:0;z-index:10;background:var(--brand);color:#fff;padding:10px 16px 0}
+header h1{font-size:16px;margin:0}
+.hd{display:flex;align-items:center;gap:10px}
+.logo{height:30px;background:#fff;border-radius:6px;padding:3px 6px;flex:none}
+@media (max-width:480px){.hd{flex-direction:column;align-items:flex-start;gap:6px}.logo{height:28px}}
+header small{opacity:.85}
+.tabs{display:flex;gap:4px;margin-top:8px}
+.tabs button{flex:1;padding:10px;border:0;background:transparent;color:#fff;opacity:.7;font-size:14px;font-weight:700;border-bottom:3px solid transparent;cursor:pointer}
+.tabs button.on{opacity:1;border-bottom-color:#fff}
+.wrap{max-width:820px;margin:0 auto;padding:12px 16px 110px}
+.page{display:none} .page.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
+.card h3{margin:0 0 10px;font-size:15px}
+.info{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.info label{font-size:12px;color:var(--muted);display:block;margin-bottom:3px}
+.info input,.info select{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font-size:15px}
+.info .full{grid-column:1/-1}
+.sec{font-size:13px;font-weight:800;color:var(--brand);margin:16px 2px 8px;letter-spacing:.3px}
+.sum{display:flex;gap:8px;flex-wrap:wrap}
+.pill{flex:1;min-width:70px;text-align:center;border-radius:10px;padding:8px 4px;font-weight:700;font-size:18px}
+.pill span{display:block;font-size:11px;font-weight:500}
+.p-all{background:var(--line)} .p-o{background:var(--okbg);color:var(--ok)}
+.p-d{background:var(--warnbg);color:var(--warn)} .p-x{background:var(--badbg);color:var(--bad)}
+details.grp{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden}
+details.grp summary{list-style:none;cursor:pointer;padding:12px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+details.grp summary::-webkit-details-marker{display:none}
+.cnt{font-size:12px;font-weight:600;color:var(--muted)}
+.cnt.done{color:var(--ok)}
+.item{border-top:1px solid var(--line);padding:10px 12px;display:grid;gap:8px;align-items:center}
+.item .nm{font-size:13px;line-height:1.3;cursor:pointer}
+.item .nm b{color:var(--muted);font-weight:600;margin-right:4px}
+.item .lim{font-size:11px;color:var(--muted);margin-top:2px}
+.item input.v{width:100%;padding:9px 4px;font-size:17px;text-align:center;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+.item input.v.O{border-color:var(--ok);background:var(--okbg)}
+.item input.v.D{border-color:var(--warn);background:var(--warnbg)}
+.item input.v.X{border-color:var(--bad);background:var(--badbg)}
+.judge{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:800;background:var(--na);color:#fff}
+.judge.O{background:var(--ok)} .judge.D{background:var(--warn)} .judge.X{background:var(--bad)}
+.item .rm{grid-column:1/-1;display:none}
+.item.open .rm{display:block}
+.item .rm input{width:100%;padding:7px;border:1px dashed var(--line);border-radius:8px;background:transparent;color:var(--ink);font-size:13px}
+/* mill motor rows */
+.item.mot{grid-template-columns:1fr 40px}
+.flds{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fld .lb{font-size:11px;color:var(--muted);margin-bottom:3px;font-weight:600}
+.fld .lb i{font-style:normal;font-weight:500}
+.fld.plg{grid-column:1/-1}
+@media (min-width:640px){.flds{grid-template-columns:repeat(5,1fr)}.fld.plg{grid-column:auto}}
+/* fan rows */
+.item.fan{grid-template-columns:1fr 76px 76px 40px}
+.fanhd{display:grid;grid-template-columns:1fr 76px 76px 40px;gap:8px;padding:0 12px 6px;font-size:11px;color:var(--muted);font-weight:600;text-align:center}
+.fanhd span:first-child{text-align:left}
+.legend{font-size:12px;color:var(--muted);line-height:1.6}
+/* summary */
+.gl{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:13px;align-items:center}
+.prog{height:6px;background:var(--line);border-radius:3px;overflow:hidden;grid-column:1/-1;margin-bottom:6px}
+.prog i{display:block;height:100%;background:var(--ok)}
+.ab{display:grid;grid-template-columns:32px 1fr;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.ab:first-of-type{border-top:0}
+.ab .judge{width:30px;height:30px;font-size:14px}
+.ab small{display:block;color:var(--muted)}
+.empty{color:var(--muted);font-size:13px}
+/* sign-off */
+.signs{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.sg{border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center;cursor:pointer;background:var(--card)}
+.sg .role{font-size:12px;font-weight:700;color:var(--brand)}
+.sg .box{height:58px;margin:6px 0;border:1px dashed var(--line);border-radius:6px;display:grid;place-items:center;color:var(--muted);font-size:12px}
+.sg .box img{max-height:54px;max-width:100%}
+.sg .nm2{font-size:12px;min-height:16px}
+.sg .dt{font-size:11px;color:var(--muted)}
+.sg.done{border-color:var(--ok);box-shadow:0 0 0 1px var(--ok) inset}
+.signcard .sub{margin:-6px 0 10px;font-size:12.5px;color:var(--muted)}
+.sgnote{font-size:12px;color:var(--muted);margin-top:8px}
+.foot{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal.on{display:flex}
+.mbox{background:var(--card);border-radius:14px;padding:14px;width:100%;max-width:440px}
+.mbox h3{margin:0 0 8px;font-size:15px}
+.mbox input{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font-size:15px;margin-bottom:8px}
+#pad{width:100%;height:170px;border:1px solid var(--line);border-radius:8px;background:#fff;touch-action:none;display:block}
+.mbtn{display:flex;gap:8px;margin-top:10px}
+.mbtn button{flex:1;padding:11px;border:0;border-radius:10px;font-weight:700;font-size:14px;background:var(--line);color:var(--ink);cursor:pointer}
+.mbtn button.pri{background:var(--brand);color:#fff}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:10px 16px;display:flex;gap:8px;justify-content:center}
+.bar button{flex:1;max-width:220px;padding:12px 6px;border:0;border-radius:10px;font-size:14px;font-weight:700;background:var(--line);color:var(--ink);cursor:pointer}
+.bar button.pri{background:var(--brand);color:#fff}
+.sumprint{width:100%;padding:13px;border:2px solid var(--brand);border-radius:10px;background:var(--card);color:var(--brand);font-size:15px;font-weight:700;cursor:pointer}
+#printArea{display:none}
+@media print{
+  body{background:#fff;color:#000;font-size:9px}
+  header,.wrap,.bar,.modal{display:none!important}
+  #printArea{display:block}
+  #printArea section{padding:0 2px}
+  #printArea table{width:100%;border-collapse:collapse}
+  #printArea th,#printArea td{border:1px solid #000;padding:1px 3px}
+  #printArea th{background:#eee}
+  #printArea h2{font-size:12px;margin:0 0 3px;display:flex;align-items:center;gap:10px}
+  #printArea h2 img{height:22px}
+  #printArea h4{font-size:11px;margin:6px 0 2px;text-decoration:underline}
+  #printArea .cmp td,#printArea .cmp th{padding:0 3px;height:14px;font-size:8.5px}
+  #printArea .kp td{text-align:center;font-size:11px;font-weight:700}
+  #printArea .res{table-layout:fixed}
+  #printArea .res th{font-size:8px;line-height:1.15}
+  #printArea .res td{height:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #printArea .res td.c{text-align:center}
+  #printArea .res td.ng{font-weight:800;text-decoration:underline}
+  #printArea .res td.sp{border-top:0;border-bottom:0;background:none}
+  #printArea .res tr{break-inside:avoid}
+  #printArea .signblk{break-inside:avoid;page-break-inside:avoid;margin-top:5px}
+  #printArea .legend{font-size:8.5px;border:1px solid #000;border-bottom:0;padding:2px 4px;display:flex;justify-content:space-between;gap:8px;color:#000}
+  #printArea .sgt{table-layout:fixed}
+  #printArea .sgt th{font-size:8.5px;padding:2px}
+  #printArea .sgt td{text-align:center;vertical-align:bottom;height:44px;padding:1px 2px;font-size:8px;line-height:1.15;overflow:hidden}
+  #printArea .sgt img{max-height:24px;max-width:100%;display:block;margin:0 auto 1px}
+  #printArea .pg{display:flex;flex-direction:column;min-height:270mm}
+  #printArea .pg .signblk{margin-top:auto;padding-top:5px}
+  @page{size:A4;margin:8mm}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="hd"><img class="logo" id="logoTop" alt="NIPPON STEEL | GSteel"><div>
+  <h1>Inspection Report of Mill Motor &amp; TR Oil Lubrication</h1>
+  <small>Line: Main motor · Section: EHSM · Period: 1 Day</small></div></div>
+  <div class="tabs">
+    <button class="on" data-p="pCheck">ตรวจเช็ค</button>
+    <button data-p="pSum">Summary</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- ===== Tab 1: Check ===== -->
+  <div class="page on" id="pCheck">
+    <div class="card info">
+      <div><label>Date</label><input type="date" id="fDate"></div>
+      <div><label>Shift</label>
+        <select id="fShift"><option value="">-</option><option>A</option><option>B</option><option>C</option><option>Day</option></select></div>
+      <div class="full"><label>Inspector</label><input id="fInsp" placeholder="ชื่อผู้ตรวจ"></div>
+    </div>
+    <div class="sec">MILL MOTOR INSPECTION</div>
+    <div id="gMotor"></div>
+    <div class="sec">COOLING FAN UNIT INSPECTION</div>
+    <div id="gFan"></div>
+    <div class="card legend">
+      <b>Judgment Mark</b> (Bearing / PLG Temp.)<br>
+      O : Good &lt; 70 °C &nbsp;·&nbsp; △ : Caution 70 ~ 80 °C &nbsp;·&nbsp; X : Danger &gt; 80 °C<br>
+      Oil Pressure : O &gt; 0.07 MPa &nbsp;·&nbsp; △ ≤ 0.07 MPa<br>
+      ช่องที่ตรวจในแถวเดียวกัน ใช้ผลที่แย่ที่สุดเป็น Judgment ของแถว<br>
+      <b>Safety Point</b> @ ควรใช้ความระมัดระวังในการ Check<br>
+      แตะชื่อรายการเพื่อเพิ่ม Remark
+    </div>
+    <div class="card signcard" id="signcard">
+      <h3>ลงนาม</h3>
+      <p class="sub">แตะช่องเพื่อเซ็นด้วยนิ้วหรือเมาส์ ลายเซ็นจะออกในใบพิมพ์ และแสดงในหน้า Summary ด้วย</p>
+      <div class="signs" id="signsCheck"></div>
+      <p class="sgnote" id="sgNote"></p>
+      <div class="foot"><span>วันที่บังคับใช้ : 1 มิถุนายน</span><span>แก้ไขครั้งที่ (REV.) : 01</span></div>
+    </div>
+  </div>
+
+  <!-- ===== Tab 2: Summary ===== -->
+  <div class="page" id="pSum">
+    <div class="card">
+      <h3 id="sHead"></h3>
+      <div class="sum">
+        <div class="pill p-all" id="sAll">0/32<span>บันทึกแล้ว</span></div>
+        <div class="pill p-o" id="sO">0<span>O Good</span></div>
+        <div class="pill p-d" id="sD">0<span>△ Caution</span></div>
+        <div class="pill p-x" id="sX">0<span>X Danger</span></div>
+      </div>
+    </div>
+    <div class="card"><h3>ความคืบหน้าตามกลุ่ม</h3><div class="gl" id="sGroups"></div></div>
+    <div class="card"><h3>รายการผิดปกติ (△ / X)</h3><div id="sAbn"></div></div>
+    <div class="card">
+      <h3>ลงนามรับทราบ</h3>
+      <div class="signs" id="signs"></div>
+      <div class="foot"><span>วันที่บังคับใช้ : 1 มิถุนายน</span><span>แก้ไขครั้งที่ (REV.) : 01</span></div>
+    </div>
+    <button class="sumprint" onclick="printSummary()">🖨 พิมพ์ / PDF เฉพาะ Summary</button>
+  </div>
+</div>
+
+<div class="bar">
+  <button onclick="resetAll()">ล้าง</button>
+  <button onclick="exportCSV()">CSV</button>
+  <button class="pri" onclick="printFull()">พิมพ์ / PDF</button>
+</div>
+
+<div class="modal" id="modal">
+  <div class="mbox">
+    <h3 id="mRole"></h3>
+    <input id="mName" placeholder="ชื่อ-สกุล">
+    <canvas id="pad"></canvas>
+    <div class="mbtn">
+      <button onclick="padClear()">ล้างลายเซ็น</button>
+      <button onclick="closeSign()">ยกเลิก</button>
+      <button class="pri" onclick="saveSign()">บันทึก</button>
+    </div>
+  </div>
+</div>
+<div id="printArea"></div>
+
+<script>
+const LOGO='data:image/jpeg;base64,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';
+document.getElementById('logoTop').src=LOGO;
+// ---------- Master data (จากต้นแบบ REV.01) ----------
+// ช่อง Water Cooling Flow ถูกทึบดำในแบบฟอร์มกระดาษ (ตรวจใน Flow Switch sheet แล้ว) จึงไม่นำมาใส่
+// ช่องตรวจของ Mill Motor: [key, ชื่อสั้น, หัวข้อ, ชนิดเกณฑ์]
+const MF=[
+ ['lb','Bearing','Load Side','T'],['lo','Oil Press.','Load Side','P'],
+ ['nb','Bearing','No Load Side','T'],['no','Oil Press.','No Load Side','P'],
+ ['pg','PLG Temp.','PLG','T']];
+const FF=[['lb','Bearing','Load Side','T'],['nb','Bearing','No Load Side','T']];
+const MOTORS=['RM No.1','RM No.2','FM No.1','FM No.2','FM No.3','FM No.4','FM No.5','FM No.6'];
+const STANDS=['R1','R2','F1','F2','F3','F4','F5','F6'];
+const FANS=STANDS.flatMap(s=>[s+' Unit fan no.1',s+' Unit fan no.2',s+' Collector fan']);
+const ITEMS=[
+ ...MOTORS.map((name,i)=>({k:'M'+(i+1),t:'M',no:i+1,name,f:MF})),
+ ...FANS.map((name,i)=>({k:'F'+(i+1),t:'F',no:i+1,name,f:FF,st:STANDS[Math.floor(i/3)]}))
+];
+const GROUPS=[{g:'Mill Motor (RM No.1–2, FM No.1–6)',t:'M',el:'gMotor'},
+ ...STANDS.map(s=>({g:'Cooling Fan '+s,t:'F',st:s,el:'gFan'}))];
+const inG=(G,it)=>it.t===G.t&&(!G.st||it.st===G.st);
+const ROLES=['Inspector','Leader Shift','Engineer','Section Manager','Department Manager','General Manager','Senior General Manager'];
+
+// ---------- Storage (draft บนเครื่อง) ----------
+const KEY='millMotorDraft';
+let st={date:'',shift:'',insp:'',v:{},r:{},sig:{}};
+try{const s=localStorage.getItem(KEY); if(s) st=Object.assign(st,JSON.parse(s));}catch(e){}
+['v','r','sig'].forEach(k=>st[k]=st[k]||{});
+function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
+
+const MARK={O:'O',D:'△',X:'X'}, RANK={'':0,O:1,D:2,X:3};
+const UNIT={T:'°C',P:'MPa'}, CRIT={T:'< 70 °C',P:'> 0.07 MPa'};
+// ================== เกณฑ์ Judgment ==================
+// Temp. (Bearing / PLG) : O < 70 · △ 70–80 · X > 80   (ตาม Judgment Mark ในแบบฟอร์ม)
+// Oil Pressure          : O > 0.07 MPa · △ ≤ 0.07 MPa  (แบบฟอร์มให้แค่เกณฑ์ > 0.07)
+function jv(type,v){
+  if(v===''||v==null||isNaN(v)) return ''; v=+v;
+  if(type==='P') return v>0.07?'O':'D';
+  return v<70?'O':v<=80?'D':'X';
+}
+const fk=(it,f)=>it.k+'_'+f[0];
+const fj=(it,f)=>jv(f[3],st.v[fk(it,f)]);
+// Judgment ของแถว = ผลแย่สุดของช่องที่กรอก · ตัดสินเมื่อกรอกครบทุกช่องในแถว หรือเมื่อเจอ △/X
+function jd(it){
+  let w='',all=true; it.f.forEach(f=>{const j=fj(it,f); if(!j) all=false; if(RANK[j]>RANK[w]) w=j;});
+  return (all||RANK[w]>1)?w:'';
+}
+const filled=it=>it.f.every(f=>fj(it,f));
+const mkI=it=>{const j=jd(it); return j?MARK[j]:'';};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=(it,f)=>{const v=st.v[fk(it,f)]; return v===''||v==null?'':v;};
+const badTxt=it=>it.f.filter(f=>RANK[fj(it,f)]>1).map(f=>`${f[2]==='PLG'?'':f[2]+' '}${f[1]} ${fmt(it,f)} ${UNIT[f[3]]} (${MARK[fj(it,f)]})`).join(' · ');
+
+// ---------- Tabs ----------
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id===b.dataset.p));
+  if(b.dataset.p==='pSum') renderSummary();
+  window.scrollTo(0,0);
+});
+
+// ---------- Render check items ----------
+const inp=(it,f,ph)=>`<input class="v" type="number" inputmode="decimal" step="${f[3]==='P'?'0.001':'0.1'}" data-f="${f[0]}" placeholder="${ph||UNIT[f[3]]}" value="${esc(st.v[fk(it,f)])}">`;
+GROUPS.forEach((G,gi)=>{
+  const d=document.createElement('details'); d.className='grp'; d.open=gi<=1;
+  d.innerHTML=`<summary>${G.g}<span class="cnt" id="c${gi}"></span></summary>`;
+  if(G.t==='F') d.insertAdjacentHTML('beforeend','<div class="fanhd"><span>Bearing Temp. °C<br>เกณฑ์ &lt; 70</span><span>Load Side</span><span>No Load Side</span><span></span></div>');
+  ITEMS.filter(it=>inG(G,it)).forEach(it=>{
+    const row=document.createElement('div'); row.id='r'+it.k;
+    if(it.t==='M'){
+      row.className='item mot';
+      row.innerHTML=`<div class="nm"><b>${it.no}</b>${it.name}</div>
+        <div class="judge" id="j${it.k}">–</div>
+        <div class="flds">${it.f.map(f=>`<div class="fld ${f[0]==='pg'?'plg':''}"><div class="lb">${f[2]==='PLG'?'PLG Temp.':f[2]+' · '+f[1]} <i>${CRIT[f[3]]}</i></div>${inp(it,f)}</div>`).join('')}</div>
+        <div class="rm"><input placeholder="Remark" value="${esc(st.r[it.k])}"></div>`;
+    }else{
+      row.className='item fan';
+      row.innerHTML=`<div class="nm"><b>${it.no}</b>${it.name}</div>${it.f.map(f=>inp(it,f,'°C')).join('')}
+        <div class="judge" id="j${it.k}">–</div>
+        <div class="rm"><input placeholder="Remark" value="${esc(st.r[it.k])}"></div>`;
+    }
+    row.querySelectorAll('input.v').forEach(vin=>vin.addEventListener('input',()=>{
+      st.v[it.k+'_'+vin.dataset.f]=vin.value; save(); upd(it); cnt();}));
+    row.querySelector('.nm').onclick=()=>row.classList.toggle('open');
+    const rin=row.querySelector('.rm input');
+    rin.addEventListener('input',()=>{st.r[it.k]=rin.value; save();});
+    if(st.r[it.k]) row.classList.add('open');
+    d.appendChild(row);
+  });
+  document.getElementById(G.el).appendChild(d);
+});
+function upd(it){
+  const j=jd(it); const el=document.getElementById('j'+it.k);
+  el.className='judge '+j; el.textContent=j?MARK[j]:'–';
+  document.querySelectorAll('#r'+it.k+' input.v').forEach(vin=>{
+    const f=it.f.find(x=>x[0]===vin.dataset.f); vin.className='v '+fj(it,f);});
+}
+function cnt(){
+  GROUPS.forEach((G,gi)=>{const its=ITEMS.filter(it=>inG(G,it)); const f=its.filter(filled).length;
+    const e=document.getElementById('c'+gi); e.textContent=f+'/'+its.length; e.classList.toggle('done',f===its.length);});
+}
+ITEMS.forEach(upd); cnt(); renderSigns();
+
+// header fields
+const fDate=document.getElementById('fDate'),fShift=document.getElementById('fShift'),fInsp=document.getElementById('fInsp');
+fDate.value=st.date||new Date(Date.now()+7*3600e3).toISOString().slice(0,10);
+fShift.value=st.shift; fInsp.value=st.insp;
+fDate.oninput=()=>{st.date=fDate.value;save()}; fShift.onchange=()=>{st.shift=fShift.value;save()};
+fInsp.oninput=()=>{st.insp=fInsp.value;save()};
+st.date=fDate.value;
+
+// ---------- Summary ----------
+function counts(){let n=0,c={O:0,D:0,X:0}; ITEMS.forEach(it=>{if(filled(it))n++; const j=jd(it); if(j)c[j]++;}); return {n,c};}
+function renderSummary(){
+  const {n,c}=counts();
+  sHead.textContent=`${st.date||'-'} · Shift ${st.shift||'-'} · ${st.insp||'(ยังไม่ระบุผู้ตรวจ)'}`;
+  sAll.firstChild.nodeValue=n+'/'+ITEMS.length; sO.firstChild.nodeValue=c.O; sD.firstChild.nodeValue=c.D; sX.firstChild.nodeValue=c.X;
+  sGroups.innerHTML=GROUPS.map(G=>{const its=ITEMS.filter(it=>inG(G,it)); const f=its.filter(filled).length;
+    return `<span>${G.g}</span><span class="cnt ${f===its.length?'done':''}">${f}/${its.length}</span><div class="prog"><i style="width:${f/its.length*100}%"></i></div>`;}).join('');
+  const ab=ITEMS.filter(it=>RANK[jd(it)]>1).sort((a,b)=>RANK[jd(b)]-RANK[jd(a)]);
+  sAbn.innerHTML=ab.length?ab.map(it=>{const j=jd(it); return `<div class="ab"><div class="judge ${j}">${MARK[j]}</div><div>${it.t==='M'?'Mill Motor':'Cooling Fan'} #${it.no} ${it.name}<small>${esc(badTxt(it))}${st.r[it.k]?' · '+esc(st.r[it.k]):''}</small></div></div>`;}).join('')
+    :'<div class="empty">ไม่มีรายการผิดปกติ</div>';
+  renderSigns();
+}
+function renderSigns(){
+  const h=ROLES.map((r,i)=>{const s=st.sig[r]||{};
+    return `<div class="sg ${s.img?'done':''}" onclick="openSign(${i})"><div class="role">${r}</div>
+      <div class="box">${s.img?`<img src="${s.img}" alt="ลายเซ็น ${r}">`:'แตะเพื่อเซ็น'}</div>
+      <div class="nm2">${esc(s.name)}</div><div class="dt">(${s.date||'……/……/……'})</div></div>`;}).join('');
+  signs.innerHTML=h; signsCheck.innerHTML=h;
+  sgNote.textContent=`ลงนามแล้ว ${ROLES.filter(r=>st.sig[r]&&st.sig[r].img).length}/${ROLES.length} ช่อง`;
+}
+
+// ---------- Signature pad ----------
+const pad=document.getElementById('pad'), ctx=pad.getContext('2d'); let curRole=null, drawing=false, inked=false;
+function fitPad(){const r=pad.getBoundingClientRect(), d=window.devicePixelRatio||1;
+  pad.width=r.width*d; pad.height=r.height*d; ctx.setTransform(d,0,0,d,0,0);
+  ctx.lineWidth=2.2; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle='#0b2a5c'; padClear();}
+function padClear(){ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,pad.width,pad.height);ctx.restore();inked=false;}
+function pos(e){const r=pad.getBoundingClientRect(); return [e.clientX-r.left,e.clientY-r.top];}
+pad.addEventListener('pointerdown',e=>{drawing=true;inked=true;pad.setPointerCapture(e.pointerId);const[x,y]=pos(e);ctx.beginPath();ctx.moveTo(x,y);});
+pad.addEventListener('pointermove',e=>{if(!drawing)return;const[x,y]=pos(e);ctx.lineTo(x,y);ctx.stroke();});
+pad.addEventListener('pointerup',()=>drawing=false); pad.addEventListener('pointercancel',()=>drawing=false);
+function openSign(i){curRole=ROLES[i]; const s=st.sig[curRole]||{};
+  mRole.textContent='ลงนาม: '+curRole; mName.value=s.name||(curRole==='Inspector'?st.insp:'');
+  modal.classList.add('on'); fitPad();
+  if(s.img){const im=new Image(); im.onload=()=>{const r=pad.getBoundingClientRect(); ctx.drawImage(im,0,0,r.width,r.height); inked=true;}; im.src=s.img;}
+}
+function closeSign(){modal.classList.remove('on');}
+function saveSign(){
+  if(!inked){ delete st.sig[curRole]; }
+  else{ const d=new Date(); const dt=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+    st.sig[curRole]={name:mName.value.trim(),date:dt,img:pad.toDataURL('image/png')}; }
+  save(); closeSign(); renderSigns();
+}
+
+// ---------- Actions ----------
+function resetAll(){ if(!confirm('ล้างข้อมูลทั้งหมด (รวมลายเซ็น)?')) return; st.v={}; st.r={}; st.sig={}; save(); location.reload(); }
+function exportCSV(){
+  const rows=[['Date',st.date,'Shift',st.shift,'Inspector',st.insp],[],['Mill Motor Inspection'],
+    ['No','Inspection Item',...MF.map(f=>`${f[2]==='PLG'?'':f[2]+' '}${f[1]} (${UNIT[f[3]]}) ${CRIT[f[3]]}`),'Judgment','Remark']];
+  ITEMS.filter(i=>i.t==='M').forEach(it=>rows.push([it.no,it.name,...it.f.map(f=>fmt(it,f)),mkI(it),st.r[it.k]||'']));
+  rows.push([],['Cooling Fan Unit Inspection'],['No','Inspection Item','Load Side Bearing (°C) < 70','No Load Side Bearing (°C) < 70','Judgment','Remark']);
+  ITEMS.filter(i=>i.t==='F').forEach(it=>rows.push([it.no,it.name,...it.f.map(f=>fmt(it,f)),mkI(it),st.r[it.k]||'']));
+  rows.push([],['Sign-off','Name','Date']); ROLES.forEach(r=>{const s=st.sig[r]||{}; rows.push([r,s.name||'',s.date||'']);});
+  const csv='﻿'+rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=`MillMotor_${st.date}_${st.shift||'-'}.csv`; a.click();
+}
+// print layout (เหมือนแบบฟอร์มกระดาษ — 1 หน้า A4)
+function signTable(){
+  const sg=ROLES.map(r=>{const s=st.sig[r]||{}; return `<td>${s.img?`<img src="${s.img}">`:''}${esc(s.name)}<br>(${s.date||'……/……/……'})</td>`;}).join('');
+  return `<div class="signblk">
+  <div class="legend"><span><b>Judgment Mark</b> &nbsp; O : Good &lt; 70 °C &nbsp;·&nbsp; △ : Caution 70 ~ 80 °C &nbsp;·&nbsp; X : Danger &gt; 80 °C &nbsp;·&nbsp; Oil Pressure △ ≤ 0.07 MPa</span><span><b>Safety Point</b> @ ควรใช้ความระมัดระวังในการ Check</span></div>
+  <table class="sgt"><tr>${ROLES.map(r=>`<th>${r}</th>`).join('')}</tr><tr>${sg}</tr></table>
+  <div style="display:flex;justify-content:space-between;margin-top:2px"><span>วันที่บังคับใช้ : 1 มิถุนายน</span><span>แก้ไขครั้งที่ (REV.) : 01</span></div></div>`;
+}
+const TITLE='Inspection Report of Mill Motor &amp; TR Oil Lubrication';
+const hdrLine=pg=>`<p style="display:flex;justify-content:space-between;margin:0 0 3px"><span>Date: ${st.date} &nbsp; Section: EHSM &nbsp; Shift: ${esc(st.shift)} &nbsp; Period: 1 Day${pg?'':' &nbsp; Inspector: '+esc(st.insp)}</span>${pg?'<span>Page 1 / 1</span>':''}</p>`;
+const cell=(it,f)=>`<td class="c ${RANK[fj(it,f)]>1?'ng':''}">${esc(fmt(it,f))}</td>`;
+function buildFullPrint(){
+  const M=ITEMS.filter(i=>i.t==='M'), F=ITEMS.filter(i=>i.t==='F');
+  const fanRow=it=>it?`<td class="c">${it.no}</td><td>${it.name}</td>${it.f.map(f=>cell(it,f)).join('')}<td class="c">${mkI(it)}</td><td>${esc(st.r[it.k])}</td>`:'<td></td>'.repeat(6);
+  const half=F.length/2;
+  printArea.innerHTML=`<section class="pg">
+  <h2><img src="${LOGO}">${TITLE} — Line: Main motor</h2>
+  ${hdrLine(true)}
+  <h4>Mill Motor Inspection</h4>
+  <table class="res"><colgroup><col style="width:4%"><col style="width:12%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:8%"><col style="width:33.5%"></colgroup>
+  <tr><th rowspan="2">No.</th><th rowspan="2">Inspection Item</th><th colspan="2">Load Side</th><th colspan="2">No Load Side</th><th>PLG</th><th rowspan="3">Judgment</th><th rowspan="3">REMARK</th></tr>
+  <tr><th>Bearing Temp (°C)</th><th>Oil Pressure (MPa)</th><th>Bearing Temp (°C)</th><th>Oil Pressure (MPa)</th><th>Temp. (°C)</th></tr>
+  <tr><th colspan="2">Motor / Criteria</th><th>&lt; 70 °C</th><th>&gt; 0.07 MPa</th><th>&lt; 70 °C</th><th>&gt; 0.07 MPa</th><th>&lt; 70 °C</th></tr>
+  ${M.map(it=>`<tr><td class="c">${it.no}</td><td>${it.name}</td>${it.f.map(f=>cell(it,f)).join('')}<td class="c">${mkI(it)}</td><td>${esc(st.r[it.k])}</td></tr>`).join('')}
+  </table>
+  <h4>Cooling Fan Unit Inspection</h4>
+  <table class="res"><colgroup><col style="width:3%"><col style="width:12%"><col style="width:6.5%"><col style="width:6.5%"><col style="width:6%"><col style="width:14%"><col style="width:2%"><col style="width:3%"><col style="width:12%"><col style="width:6.5%"><col style="width:6.5%"><col style="width:6%"><col style="width:16%"></colgroup>
+  <tr><th rowspan="2">No.</th><th rowspan="2">Inspection Item</th><th>Load Side</th><th>No Load Side</th><th rowspan="3">Judgment</th><th rowspan="3">REMARK</th><td class="sp" rowspan="${half+3}"></td>
+      <th rowspan="2">No.</th><th rowspan="2">Inspection Item</th><th>Load Side</th><th>No Load Side</th><th rowspan="3">Judgment</th><th rowspan="3">REMARK</th></tr>
+  <tr><th>Bearing</th><th>Bearing</th><th>Bearing</th><th>Bearing</th></tr>
+  <tr><th colspan="2">Motor / Criteria</th><th>&lt; 70 °C</th><th>&lt; 70 °C</th><th colspan="2">Motor / Criteria</th><th>&lt; 70 °C</th><th>&lt; 70 °C</th></tr>
+  ${Array.from({length:half},(_,i)=>`<tr>${fanRow(F[i])}${fanRow(F[i+half])}</tr>`).join('')}
+  </table>
+  ${signTable()}
+  </section>`;
+}
+function buildSummaryPrint(){
+  const {n,c}=counts(); const ab=ITEMS.filter(it=>RANK[jd(it)]>1).sort((a,b)=>RANK[jd(b)]-RANK[jd(a)]);
+  const grp=GROUPS.map(G=>{const its=ITEMS.filter(it=>inG(G,it)); const k={O:0,D:0,X:0}; its.forEach(i=>{const j=jd(i); if(j)k[j]++;});
+    return `<tr><td>${G.g}</td><td>${its.filter(filled).length}/${its.length}</td><td>${k.O}</td><td>${k.D}</td><td>${k.X}</td></tr>`;}).join('');
+  printArea.innerHTML=`<section>
+  <h2><img src="${LOGO}">Summary — ${TITLE} (Line: Main motor)</h2>
+  ${hdrLine(false)}
+  <table class="kp"><tr><th>บันทึกแล้ว</th><th>O Good</th><th>△ Caution</th><th>X Danger</th></tr>
+  <tr><td>${n}/${ITEMS.length}</td><td>${c.O}</td><td>${c.D}</td><td>${c.X}</td></tr></table>
+  <h4>รายการผิดปกติ (△ / X)</h4>
+  ${ab.length?`<table class="cmp"><tr><th>Type</th><th>No.</th><th>Inspection Item</th><th>ค่าที่ผิดเกณฑ์</th><th>Judgment</th><th>Remark</th></tr>
+  ${ab.map(it=>`<tr><td>${it.t==='M'?'Mill Motor':'Cooling Fan'}</td><td>${it.no}</td><td>${it.name}</td><td>${esc(badTxt(it))}</td><td>${mkI(it)}</td><td>${esc(st.r[it.k])}</td></tr>`).join('')}</table>`
+  :'<p>ไม่มีรายการผิดปกติ</p>'}
+  <h4>สรุปตามกลุ่ม</h4>
+  <table class="cmp"><tr><th>กลุ่ม</th><th>บันทึก</th><th>O</th><th>△</th><th>X</th></tr>${grp}</table>
+  ${signTable()}</section>`;
+}
+// บีบให้อยู่ในหน้าเดียว (A4 พื้นที่พิมพ์ ~194×281mm)
+function fitOnePage(){
+  const sec=printArea.firstElementChild; if(!sec) return;
+  const mm=96/25.4, old=printArea.getAttribute('style')||'';
+  printArea.setAttribute('style','display:block;position:absolute;left:-9999px;top:0;width:'+(194*mm)+'px;font-size:9px');
+  sec.style.zoom=''; sec.style.minHeight='0'; const h=sec.scrollHeight; sec.style.minHeight=''; printArea.setAttribute('style',old);
+  const max=277*mm; if(h>max) sec.style.zoom=(max/h).toFixed(3);
+}
+let printMode='full';
+function printFull(){ printMode='full'; window.print(); }
+function printSummary(){ printMode='summary'; window.print(); }
+window.addEventListener('afterprint',()=>{ printMode='full'; });
+window.addEventListener('beforeprint',()=>{ if(printMode==='summary') buildSummaryPrint(); else buildFullPrint(); fitOnePage(); });
+if("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>

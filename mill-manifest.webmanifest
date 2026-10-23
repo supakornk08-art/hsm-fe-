@@ -1,0 +1,15 @@
+{
+ "id": "./mill-motor.html",
+ "name": "02 Mill Motor & TR Oil Lubrication",
+ "short_name": "02 Mill Motor",
+ "lang": "th",
+ "start_url": "./mill-motor.html",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#f3f5f8",
+ "theme_color": "#0b4ea2",
+ "icons": [
+  {"src": "mill-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+  {"src": "mill-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"}
+ ]
+}
