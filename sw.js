@@ -1,5 +1,5 @@
 // HSM Check sheets — offline cache. เปลี่ยนเลขเวอร์ชันทุกครั้งที่อัปเดตไฟล์ index.html, motor-temp.html, fault-lookup.html, flow-lube.html หรือ descale-lube.html
-const CACHE = "hsm-check-1.11.0";
+const CACHE = "hsm-check-1.11.1";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png",
   "./motor-temp.html", "./motor-manifest.webmanifest", "./motor-icon-180.png", "./motor-icon-192.png", "./motor-icon-512.png",
   "./fault-lookup.html", "./fault-manifest.webmanifest", "./fault-icon-180.png", "./fault-icon-192.png", "./fault-icon-512.png",
