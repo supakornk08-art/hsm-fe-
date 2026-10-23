@@ -1,5 +1,5 @@
-// HSM Check sheets — offline cache. เปลี่ยนเลขเวอร์ชันทุกครั้งที่อัปเดตไฟล์ index.html, motor-temp.html, fault-lookup.html, flow-lube.html, descale-lube.html, cooling-fan.html, mill-motor.html, hyd-pump.html, gauge-water-air.html หรือ hpc-air.html
-const CACHE = "hsm-check-1.16.0";
+// HSM Check sheets — offline cache. เปลี่ยนเลขเวอร์ชันทุกครั้งที่อัปเดตไฟล์ index.html, motor-temp.html, fault-lookup.html, flow-lube.html, descale-lube.html, cooling-fan.html, mill-motor.html, hyd-pump.html, gauge-water-air.html, hpc-air.html หรือ special-gauge.html
+const CACHE = "hsm-check-1.17.0";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png",
   "./motor-temp.html", "./motor-manifest.webmanifest", "./motor-icon-180.png", "./motor-icon-192.png", "./motor-icon-512.png",
   "./fault-lookup.html", "./fault-manifest.webmanifest", "./fault-icon-180.png", "./fault-icon-192.png", "./fault-icon-512.png",
@@ -9,7 +9,8 @@ const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-180.png",
   "./mill-motor.html", "./mill-manifest.webmanifest", "./mill-icon-180.png", "./mill-icon-192.png", "./mill-icon-512.png",
   "./hyd-pump.html", "./hyd-manifest.webmanifest", "./hyd-icon-180.png", "./hyd-icon-192.png", "./hyd-icon-512.png",
   "./gauge-water-air.html", "./gauge-manifest.webmanifest", "./gauge-icon-180.png", "./gauge-icon-192.png", "./gauge-icon-512.png",
-  "./hpc-air.html", "./hpcair-manifest.webmanifest", "./hpcair-icon-180.png", "./hpcair-icon-192.png", "./hpcair-icon-512.png"];
+  "./hpc-air.html", "./hpcair-manifest.webmanifest", "./hpcair-icon-180.png", "./hpcair-icon-192.png", "./hpcair-icon-512.png",
+  "./special-gauge.html", "./spgauge-manifest.webmanifest", "./spgauge-icon-180.png", "./spgauge-icon-192.png", "./spgauge-icon-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k))))); self.clients.claim(); });
 self.addEventListener("fetch", e => {

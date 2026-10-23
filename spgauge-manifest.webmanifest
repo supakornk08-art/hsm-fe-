@@ -1,0 +1,15 @@
+{
+ "id": "./special-gauge.html",
+ "name": "Special Gauge Check Sheet",
+ "short_name": "Special Gauge",
+ "lang": "th",
+ "start_url": "./special-gauge.html",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#f3f5f8",
+ "theme_color": "#0b4ea2",
+ "icons": [
+  {"src": "spgauge-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+  {"src": "spgauge-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"}
+ ]
+}
