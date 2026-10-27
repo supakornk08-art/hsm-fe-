@@ -200,5 +200,17 @@ render();
 document.getElementById('logoTop').src=LOGO;
 if("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
+<!-- EEHSM: back to menu -->
+<script>
+(function(){
+  var a=document.createElement('a'); a.href='./'; a.textContent='\u2039 เมนู'; a.setAttribute('aria-label','กลับเมนู EEHSM');
+  a.style.cssText='flex:none;display:inline-flex;align-items:center;height:30px;padding:0 12px;border-radius:15px;background:rgba(255,255,255,.2);color:#fff;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap';
+  var h=document.querySelector('header .hd')||document.querySelector('.appbar .wrap');
+  if(!h) return;
+  var lg=h.querySelector(':scope > img.logo');
+  if(lg){ var r=document.createElement('span'); r.style.cssText='display:flex;align-items:center;gap:8px;flex:none'; h.insertBefore(r,lg); r.appendChild(a); r.appendChild(lg); }
+  else h.insertBefore(a,h.firstChild);
+})();
+</script>
 </body>
 </html>
