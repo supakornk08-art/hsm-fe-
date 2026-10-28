@@ -509,6 +509,58 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")) navigat
   function g(id){var e=document.getElementById(id);return e&&e.firstChild?String(e.firstChild.nodeValue).trim():'';}
   function close(){M.classList.remove('on');}
   M.addEventListener('click',function(e){if(e.target===M)close();});
+
+  function eeNorm(rows,base){
+    var META=/^(no|kw|a|temp h\.h\.|temp h\.|set h\.|set h\.h\.|unit|code|room|group|section|line)$/i;
+    var ITEM=/^(inspection item|motor name|description|item \/ specification|common converter)$/i;
+    var STD=/^(standard|std|std temp|std current|std \(°c\))$/i, REM=/^(remark|note|หมายเหตุ)$/i, JUD=/^judgment/i;
+    var out=[], hdr=null, title='';
+    function unitOf(h,std,row,ix){
+      if(ix.unit>=0&&row[ix.unit]) return String(row[ix.unit]).replace(/^Amp$/,'A');
+      var m=/\(([^)]+)\)/.exec(h); if(m&&!/^\d/.test(m[1])) return m[1].replace(/^Amp$/,'A');
+      if(/current/i.test(h)) return 'A';
+      var s=String(std||''); if(/°C/.test(s)) return '°C'; var tm=/\(([^)]*°C[^)]*)\)/.exec(title); if(tm) return '°C'; if(/Amp/.test(s)) return 'A'; if(/mA/.test(s)) return 'mA'; if(/MPa/.test(s)) return 'MPa'; if(/Bar/i.test(s)) return 'Bar';
+      return '';
+    }
+    for(var i=0;i<rows.length;i++){
+      var r=rows[i]||[];
+      if(!r.length){hdr=null;continue;}
+      if(r[0]==='Sign-off'||r[0]==='Date'){hdr=null;continue;}
+      if(r.length===1){title=String(r[0]);hdr=null;continue;}
+      if(r.some(function(c){return JUD.test(String(c));})&&r.some(function(c){return ITEM.test(String(c));})){
+        hdr=r.map(String); var ix={item:-1,unit:-1,std:-1,stds:[],rem:-1,jud:[],grp:-1,code:-1,no:-1,vals:[]};
+        hdr.forEach(function(h,k){var t=h.trim();
+          if(ITEM.test(t))ix.item=k; else if(/^unit$/i.test(t))ix.unit=k; else if(STD.test(t)){ix.std=k;ix.stds.push(k);}
+          else if(REM.test(t))ix.rem=k; else if(JUD.test(t))ix.jud.push(k); else if(/^(room|group)$/i.test(t))ix.grp=k;
+          else if(/^code$/i.test(t))ix.code=k; else if(/^no$/i.test(t))ix.no=k; else if(!META.test(t))ix.vals.push(k);});
+        hdr.ix=ix; continue;
+      }
+      if(!hdr) continue;
+      var ix=hdr.ix, item=String(r[ix.item]||'');
+      if(ix.code>=0&&r[ix.code]) item=r[ix.code]+' '+item;
+      var grp=ix.grp>=0?String(r[ix.grp]||''):title;
+      ix.vals.forEach(function(k){
+        var raw=r[k]; if(raw===''||raw==null) return;
+        var h=hdr[k], param=h.replace(/\s*\(.*$/,'').replace(/\s*[<>≤≥].*$/,'').trim()||h;
+        if(/^actual$/i.test(param)) param='Value';
+        if(/^rm \/ actual$/i.test(param)){ var fk=hdr.indexOf('FM'); param=(fk>=0&&r[fk]!==''&&r[fk]!=null)?'RM':'Value'; }
+        var jk=ix.jud[0]; if(ix.jud.length>1){ jk=/current/i.test(h)?ix.jud.filter(function(j){return /current/i.test(hdr[j]);})[0]:ix.jud.filter(function(j){return /temp/i.test(hdr[j]);})[0]; }
+        var sk=ix.std; if(ix.stds.length>1){ var want=/current/i.test(h)?/current/i:/temp/i; sk=ix.stds.filter(function(j){return want.test(hdr[j]);})[0]; if(sk==null) sk=ix.std; }
+        var sh=sk>=0?hdr[sk]:'', stdv=sk>=0?String(r[sk]||''):'';
+        if(sk<0){ var hm=/([<>≤≥]\s*[\d.]+(?:\s*[^\s()]+)?)\s*$/.exec(h); if(hm) stdv=hm[1]; }
+        var hu=/\(([^)]+)\)/.exec(h); if(hu&&/\(°C\)/.test(sh)&&!/°C/.test(hu[1])) stdv='';
+        var num=parseFloat(String(raw).replace(/,/g,'')), isNum=/^\s*-?[\d.]+\s*$/.test(String(raw));
+        var o={};
+        for(var b in base) o[b]=base[b];
+        o.group=grp; o.no=ix.no>=0?r[ix.no]:''; o.item=item; o.param=param;
+        o.key=base.sheetNo+' | '+item+' | '+param;
+        o.value=isNum?num:''; o.text=isNum?'':String(raw); o.unit=unitOf(h,stdv,r,ix);
+        o.std=stdv; o.judge=jk!=null?String(r[jk]||''):''; o.remark=ix.rem>=0?String(r[ix.rem]||''):'';
+        out.push(o);
+      });
+    }
+    return out;
+  }
   function build(){
     var rows=null; window.__eehsmRows=function(r){rows=r;};
     try{exportCSV();}finally{delete window.__eehsmRows;}
@@ -519,9 +571,10 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")) navigat
     var t=new Date(), hm=String(t.getHours()).padStart(2,'0')+String(t.getMinutes()).padStart(2,'0');
     var id=NO+'-'+F+'-'+(st.date||'nodate')+'-'+(st.shift||'x')+'-'+t.getTime().toString(36);
     var title=(document.querySelector('header h1')||{}).textContent||F;
-    var p={id:id,sheet:NO+' '+title.trim(),date:st.date||'',shift:st.shift||'',inspector:st.insp||'',
+    var p={id:id,sheetNo:NO,sheet:NO+' '+title.trim(),date:st.date||'',shift:st.shift||'',inspector:st.insp||'',
       recorded:+all[0]||0,total:+all[1]||0,O:+g('sO')||0,D:+g('sD')||0,X:+g('sX')||0,
       items:JSON.stringify({file:F,rows:rows,state:state}),submittedAt:t.toISOString()};
+    p.points=eeNorm(rows||[],{id:id,date:p.date,shift:p.shift,sheetNo:NO,sheet:p.sheet,inspector:p.inspector,submittedAt:p.submittedAt});
     var fn='EEHSM_'+NO+'_'+F+'_'+(st.date||'nodate')+'_'+(st.shift||'x')+'_'+hm+'.json';
     return {p:p,fn:fn};
   }
