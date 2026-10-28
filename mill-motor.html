@@ -395,6 +395,7 @@ function exportCSV(){
   rows.push([],['Cooling Fan Unit Inspection'],['No','Inspection Item','Load Side Bearing (°C) < 70','No Load Side Bearing (°C) < 70','Judgment','Remark']);
   ITEMS.filter(i=>i.t==='F').forEach(it=>rows.push([it.no,it.name,...it.f.map(f=>fmt(it,f)),mkI(it),st.r[it.k]||'']));
   rows.push([],['Sign-off','Name','Date']); ROLES.forEach(r=>{const s=st.sig[r]||{}; rows.push([r,s.name||'',s.date||'']);});
+  if(window.__eehsmRows){window.__eehsmRows(rows);return;}
   const csv='﻿'+rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\r\n');
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
   a.download=`MillMotor_${st.date}_${st.shift||'-'}.csv`; a.click();
@@ -492,6 +493,80 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")) navigat
   }catch(e){}}
   var tm, _save=save; save=function(){var r=_save.apply(this,arguments); clearTimeout(tm); tm=setTimeout(pub,300); return r;};
   pub();
+})();
+</script>
+<!-- EEHSM: send inspection file to the central list (OneDrive file request) -->
+<style>
+#eeSend{background:#1e9e5a!important;color:#fff!important}
+.ee-m{position:fixed;inset:0;z-index:50;background:rgba(10,20,35,.55);display:none;align-items:flex-end;justify-content:center}
+.ee-m.on{display:flex}
+.ee-b{background:var(--card,#fff);color:var(--ink,#1b2430);width:100%;max-width:520px;border-radius:16px 16px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -6px 24px rgba(0,0,0,.25)}
+.ee-b h3{margin:0 0 4px;font-size:18px} .ee-b p{margin:6px 0;font-size:14px;line-height:1.45;color:var(--muted,#6b7684)}
+.ee-sum{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.ee-sum span{background:var(--bg,#f3f5f8);border-radius:999px;padding:4px 10px;font-size:13px;font-weight:700}
+.ee-fn{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;background:var(--bg,#f3f5f8);border-radius:8px;padding:8px;word-break:break-all;color:var(--ink,#1b2430)}
+.ee-st{display:grid;gap:8px;margin-top:12px}
+.ee-st button{padding:14px;border:0;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;text-align:left}
+.ee-1{background:#0b4ea2;color:#fff} .ee-2{background:#1e9e5a;color:#fff} .ee-2[disabled]{opacity:.45}
+.ee-x{background:transparent;color:var(--muted,#6b7684);border:1px solid var(--line,#dfe3e8)!important;text-align:center!important}
+.ee-warn{color:#d23a3a!important;font-weight:700}
+</style>
+<div class="ee-m" id="eeM"><div class="ee-b">
+  <h3>ส่งผลตรวจเข้าระบบ</h3>
+  <div id="eeBody"></div>
+</div></div>
+<script>
+(function(){
+  var LINK='https://gsteelth-my.sharepoint.com/:f:/g/personal/supakornk_gsteel_com/IgBfAMJU1h7wQ5ZZ2DJbOLRfARTYzHr8fN_KeWbZGXDGVm0', NO='02';
+  var F=(location.pathname.split('/').pop()||'').replace(/\.html$/,'');
+  var bar=document.querySelector('.bar'); if(!bar||typeof exportCSV!=='function'||typeof st==='undefined') return;
+  var b=document.createElement('button'); b.id='eeSend'; b.type='button'; b.textContent='ส่งเข้าระบบ'; bar.appendChild(b);
+  var M=document.getElementById('eeM'), B=document.getElementById('eeBody');
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function g(id){var e=document.getElementById(id);return e&&e.firstChild?String(e.firstChild.nodeValue).trim():'';}
+  function close(){M.classList.remove('on');}
+  M.addEventListener('click',function(e){if(e.target===M)close();});
+  function build(){
+    var rows=null; window.__eehsmRows=function(r){rows=r;};
+    try{exportCSV();}finally{delete window.__eehsmRows;}
+    try{renderSummary();}catch(e){}
+    var all=g('sAll').split('/'), sig={};
+    Object.keys(st.sig||{}).forEach(function(k){var s=st.sig[k]||{}; sig[k]={name:s.name||'',date:s.date||''};});
+    var state={}; Object.keys(st).forEach(function(k){ if(k!=='sig') state[k]=st[k]; }); state.sig=sig;
+    var t=new Date(), hm=String(t.getHours()).padStart(2,'0')+String(t.getMinutes()).padStart(2,'0');
+    var id=NO+'-'+F+'-'+(st.date||'nodate')+'-'+(st.shift||'x')+'-'+t.getTime().toString(36);
+    var title=(document.querySelector('header h1')||{}).textContent||F;
+    var p={id:id,sheet:NO+' '+title.trim(),date:st.date||'',shift:st.shift||'',inspector:st.insp||'',
+      recorded:+all[0]||0,total:+all[1]||0,O:+g('sO')||0,D:+g('sD')||0,X:+g('sX')||0,
+      items:JSON.stringify({file:F,rows:rows,state:state}),submittedAt:t.toISOString()};
+    var fn='EEHSM_'+NO+'_'+F+'_'+(st.date||'nodate')+'_'+(st.shift||'x')+'_'+hm+'.json';
+    return {p:p,fn:fn};
+  }
+  b.addEventListener('click',function(){
+    var miss=[]; if(!st.date)miss.push('Date'); if(!st.shift)miss.push('Shift'); if(!st.insp)miss.push('Inspector');
+    var d=build(), p=d.p;
+    B.innerHTML='<div class="ee-sum"><span>'+esc(p.date||'-')+'</span><span>กะ '+esc(p.shift||'-')+'</span><span>'+esc(p.inspector||'-')+'</span><span>บันทึก '+p.recorded+'/'+p.total+'</span>'+(p.D?'<span>△ '+p.D+'</span>':'')+(p.X?'<span>X '+p.X+'</span>':'')+'</div>'+
+      (miss.length?'<p class="ee-warn">ยังไม่ได้กรอก: '+miss.join(', ')+' — กรอกให้ครบก่อนส่ง</p>':'')+
+      (p.recorded<p.total?'<p class="ee-warn">ยังกรอกไม่ครบทุกรายการ ('+p.recorded+'/'+p.total+') ส่งได้ แต่ตรวจสอบก่อน</p>':'')+
+      '<p>ไฟล์ที่จะส่ง:</p><div class="ee-fn">'+esc(d.fn)+'</div>'+
+      '<div class="ee-st"><button class="ee-1" id="eeS1"'+(miss.length?' disabled':'')+'>1 · บันทึกไฟล์ผลตรวจลงเครื่อง</button>'+
+      '<button class="ee-2" id="eeS2" disabled>2 · เปิดหน้าส่งไฟล์ แล้วเลือกไฟล์นี้</button>'+
+      '<button class="ee-x" id="eeX">ปิด</button></div>'+
+      '<p>ในหน้าส่งไฟล์: กด <b>Select files</b> → เลือกไฟล์ด้านบน → ใส่ชื่อ → <b>Upload</b> ระบบจะบันทึกเข้า List ให้อัตโนมัติภายในไม่กี่นาที</p>';
+    M.classList.add('on');
+    document.getElementById('eeX').onclick=close;
+    document.getElementById('eeS1').onclick=function(){
+      var blob=new Blob([JSON.stringify(p)],{type:'application/json'}), a=document.createElement('a');
+      a.href=URL.createObjectURL(blob); a.download=d.fn; document.body.appendChild(a); a.click();
+      setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},2000);
+      this.textContent='✓ บันทึกไฟล์แล้ว'; document.getElementById('eeS2').disabled=false;
+    };
+    document.getElementById('eeS2').onclick=function(){
+      window.open(LINK,'_blank','noopener');
+      try{localStorage.setItem('eehsm.sent.'+F,JSON.stringify({id:p.id,date:p.date,shift:p.shift,t:Date.now()}));}catch(e){}
+      this.textContent='✓ เปิดหน้าส่งไฟล์แล้ว';
+    };
+  });
 })();
 </script>
 </body>

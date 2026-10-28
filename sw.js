@@ -1,5 +1,5 @@
 // HSM Check sheets — offline cache. เปลี่ยนเลขเวอร์ชันทุกครั้งที่อัปเดตไฟล์ index.html (เมนู EEHSM), startup.html, motor-temp.html, fault-lookup.html, flow-lube.html, descale-lube.html, cooling-fan.html, mill-motor.html, hyd-pump.html, gauge-water-air.html, hpc-air.html, earth-leak.html หรือ special-gauge.html
-const CACHE = "hsm-check-1.19.1";
+const CACHE = "hsm-check-1.20.0";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./eehsm-icon-180.png", "./eehsm-icon-192.png", "./eehsm-icon-512.png",
   "./startup.html", "./startup-manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png",
   "./motor-temp.html", "./motor-manifest.webmanifest", "./motor-icon-180.png", "./motor-icon-192.png", "./motor-icon-512.png",
