@@ -68,7 +68,7 @@ details.grp summary::-webkit-details-marker{display:none}
 .ins input{width:100%;padding:9px 4px;font-size:17px;text-align:center;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
 .ins .amp input{border-color:var(--brand)}
 .ins input.D{background:var(--warnbg);border-color:var(--warn)} .ins input.X{background:var(--badbg);border-color:var(--bad)}
-.item .rm{display:none;margin-top:6px}
+.item .rm{display:block;margin-top:6px}
 .item.open .rm{display:block}
 .item .rm input{width:100%;padding:7px;border:1px dashed var(--line);border-radius:8px;background:transparent;color:var(--ink);font-size:13px}
 .legend{font-size:12px;color:var(--muted);line-height:1.6}
@@ -285,7 +285,7 @@ DATA.forEach((G,gi)=>{
       <div class="jj"><div class="jw"><div class="judge" id="jt${it.id}">–</div>T</div><div class="jw"><div class="judge" id="ja${it.id}">–</div>A</div></div></div>
       <div class="ins">${POS.map(([k,l])=>`<div><label>${l} °C</label><input data-k="${k}" type="number" inputmode="decimal" step="0.1" value="${esc(v[k])}"></div>`).join('')}
         <div class="amp"><label>Current A</label><input data-k="a" type="number" inputmode="decimal" step="0.1" value="${esc(v.a)}"></div></div>
-      <div class="rm"><input placeholder="Note" value="${esc(st.r[it.code])}"></div>`;
+      <div class="rm"><input placeholder="Remark / หมายเหตุ (ถ้ามี)" value="${esc(st.r[it.code])}"></div>`;
     row.querySelector('.nm').onclick=()=>row.classList.toggle('open');
     row.querySelectorAll('.ins input').forEach(inp=>inp.addEventListener('input',()=>{
       const o=st.v[it.code]=st.v[it.code]||{}; if(inp.value==='') delete o[inp.dataset.k]; else o[inp.dataset.k]=inp.value;

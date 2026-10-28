@@ -273,7 +273,7 @@ ITEMS.forEach(it=>{
       <div class="judge" id="j${it.k}">–</div>
       <div class="hint" id="h${it.k}"></div>
     </div>
-    <div class="rm"><input placeholder="หมายเหตุ" value="${esc(st.r[it.k])}"></div>`;
+    <div class="rm"><input placeholder="Remark / หมายเหตุ (ถ้ามี)" value="${esc(st.r[it.k])}"></div>`;
   const inp=c.querySelector('input.v');
   inp.addEventListener('input',()=>{st.v[it.k]=inp.value; save(); upd(it);});
   inp.addEventListener('blur',()=>{const v=num(inp.value); if(v!=null&&v>=0){inp.value=v.toFixed(2); st.v[it.k]=inp.value; save(); upd(it);}});

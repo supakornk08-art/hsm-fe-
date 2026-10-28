@@ -64,7 +64,7 @@ details.grp summary::-webkit-details-marker{display:none}
 .item input.v.X{border-color:var(--bad);background:var(--badbg)}
 .judge{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:800;background:var(--na);color:#fff}
 .judge.O{background:var(--ok)} .judge.D{background:var(--warn)} .judge.X{background:var(--bad)}
-.item .rm{grid-column:1/-1;display:none}
+.item .rm{grid-column:1/-1;display:block}
 .item.open .rm{display:block}
 .item .rm input{width:100%;padding:7px;border:1px dashed var(--line);border-radius:8px;background:transparent;color:var(--ink);font-size:13px}
 /* mill motor rows */
@@ -304,12 +304,12 @@ GROUPS.forEach((G,gi)=>{
       row.innerHTML=`<div class="nm"><b>${it.no}</b>${it.name}</div>
         <div class="judge" id="j${it.k}">–</div>
         <div class="flds">${it.f.map(f=>`<div class="fld ${f[0]==='pg'?'plg':''}"><div class="lb">${f[2]==='PLG'?'PLG Temp.':f[2]+' · '+f[1]} <i>${CRIT[f[3]]}</i></div>${inp(it,f)}</div>`).join('')}</div>
-        <div class="rm"><input placeholder="Remark" value="${esc(st.r[it.k])}"></div>`;
+        <div class="rm"><input placeholder="Remark / หมายเหตุ (ถ้ามี)" value="${esc(st.r[it.k])}"></div>`;
     }else{
       row.className='item fan';
       row.innerHTML=`<div class="nm"><b>${it.no}</b>${it.name}</div>${it.f.map(f=>inp(it,f,'°C')).join('')}
         <div class="judge" id="j${it.k}">–</div>
-        <div class="rm"><input placeholder="Remark" value="${esc(st.r[it.k])}"></div>`;
+        <div class="rm"><input placeholder="Remark / หมายเหตุ (ถ้ามี)" value="${esc(st.r[it.k])}"></div>`;
     }
     row.querySelectorAll('input.v').forEach(vin=>vin.addEventListener('input',()=>{
       st.v[it.k+'_'+vin.dataset.f]=vin.value; save(); upd(it); cnt();}));

@@ -61,7 +61,7 @@ details.grp summary::-webkit-details-marker{display:none}
 .item input.v{width:100%;padding:9px 6px;font-size:17px;text-align:center;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
 .judge{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:800;background:var(--na);color:#fff}
 .judge.O{background:var(--ok)} .judge.D{background:var(--warn)}
-.item .rm{grid-column:1/-1;display:none}
+.item .rm{grid-column:1/-1;display:block}
 .item.open .rm{display:block}
 .item .rm input{width:100%;padding:7px;border:1px dashed var(--line);border-radius:8px;background:transparent;color:var(--ink);font-size:13px}
 /* lubrication rows */
@@ -295,7 +295,7 @@ GROUPS.forEach((G,gi)=>{
       row.innerHTML=`<div class="nm"><b>${it.no}</b>${it.name}<div class="lim">Standard ${esc(stdTxt(it))} L/min</div></div>
         <input class="v" type="number" inputmode="decimal" step="0.1" placeholder="L/min" value="${esc(st.v[it.k])}">
         <div class="judge" id="j${it.k}">–</div>
-        <div class="rm"><input placeholder="Remark" value="${esc(st.r[it.k])}"></div>`;
+        <div class="rm"><input placeholder="Remark / หมายเหตุ (ถ้ามี)" value="${esc(st.r[it.k])}"></div>`;
       const vin=row.querySelector('input.v');
       vin.addEventListener('input',()=>{st.v[it.k]=vin.value; save(); upd(it); cnt();});
     }else{
@@ -305,7 +305,7 @@ GROUPS.forEach((G,gi)=>{
       row.innerHTML=`<div class="nm"><b>${it.no}</b>${it.name}</div>
         <div class="judge" id="j${it.k}">–</div>
         <div class="segs">${sg('stop','Status ตอน Stop')}${sg('start','Status ตอน Start')}</div>
-        <div class="rm"><input placeholder="Remark" value="${esc(st.r[it.k])}"></div>`;
+        <div class="rm"><input placeholder="Remark / หมายเหตุ (ถ้ามี)" value="${esc(st.r[it.k])}"></div>`;
       row.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{
         const s=st.s[it.k]=st.s[it.k]||{}; const f=b.dataset.f;
         s[f]=s[f]===b.dataset.v?undefined:b.dataset.v; // แตะซ้ำ = ยกเลิก
