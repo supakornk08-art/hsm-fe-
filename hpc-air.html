@@ -172,7 +172,9 @@ details.grp summary::-webkit-details-marker{display:none}
       O : Good &lt; 30 °C &nbsp;·&nbsp; △ : Caution 30 ~ 35 °C &nbsp;·&nbsp; X : Danger &gt; 35 °C<br>
       <b>Judgment Mark (Air Condition)</b> — STD &lt; 25 °C<br>
       O : Good &lt; 25 °C &nbsp;·&nbsp; △ : Caution 25 ~ 30 °C &nbsp;·&nbsp; X : Danger &gt; 30 °C<br>
-      สถานะ <b>FAIL</b> = X ทันที · Humidity (%RH) บันทึกค่าอย่างเดียว (แบบฟอร์มไม่มีเกณฑ์)<br>
+      <b>Judgment Mark (Humidity)</b> — %RH<br>
+      O : Normal &lt; 60 %RH &nbsp;·&nbsp; △ : Caution 61 ~ 70 %RH &nbsp;·&nbsp; X : NG &gt; 70 %RH<br>
+      สถานะ <b>FAIL</b> = X ทันที · Judgment ของแถวใช้ค่าที่แย่ที่สุด (อุณหภูมิ / %RH / สถานะ)<br>
       <b>Safety Point</b> ควรใช้ความระมัดระวังในการตรวจสอบ<br>
       แตะชื่อรายการเพื่อเพิ่ม Remark
     </div>
@@ -269,7 +271,8 @@ const RANK={'':0,O:1,D:2,X:3};
 // ================== เกณฑ์ Judgment (ตาม Judgment Mark บนแบบฟอร์ม) ==================
 // HPC        : O < 30 · △ 30–35 · X > 35 °C
 // Air Con    : O < 25 · △ 25–30 · X > 30 °C · สถานะ FAIL = X
-// Air Con ต้องเลือกสถานะ + กรอกอุณหภูมิ จึงนับว่าบันทึกครบ · Humidity บันทึกอย่างเดียว
+// Humidity   : O ≤ 60 · △ >60–70 · X > 70 %RH
+// Air Con ต้องเลือกสถานะ + กรอกอุณหภูมิ + %RH จึงนับว่าบันทึกครบ · Judgment = ค่าที่แย่ที่สุด
 const raw=(it,f)=>{const v=(st.v[it.k]||{})[f]; return v==null?'':v;};
 const num=(it,f)=>{const v=raw(it,f); return v===''||isNaN(v)?null:+v;};
 function tj(it){
@@ -277,13 +280,18 @@ function tj(it){
   const lo=it.t==='H'?30:25, hi=lo+5;
   return v<lo?'O':v<=hi?'D':'X';
 }
+function hj(it){
+  const v=num(it,'RH'); if(v===null) return '';
+  return v<=60?'O':v<=70?'D':'X';
+}
 function jd(it){
   const t=tj(it);
   if(it.t==='H') return t;
-  const s=raw(it,'S');
+  const s=raw(it,'S'), h=hj(it);
   if(s==='FAIL') return 'X';
-  if(t==='D'||t==='X') return t;
-  return (t&&s)?'O':'';
+  const w=RANK[t]>=RANK[h]?t:h;
+  if(w==='D'||w==='X') return w;
+  return (t&&h&&s)?'O':'';
 }
 const mkI=it=>{const j=jd(it); return j?MARK[j]:'';};
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -310,7 +318,7 @@ GROUPS.forEach((G,gi)=>{
         ${inp('T','°C')}<div class="judge" id="j${it.k}">–</div>`;
     }else{
       row.className='item';
-      row.innerHTML=`<div class="nm"><b>${it.no}</b>${esc(it.short)}<div class="lim">STD &lt; 25 °C</div></div>
+      row.innerHTML=`<div class="nm"><b>${it.no}</b>${esc(it.short)}<div class="lim">STD &lt; 25 °C · Humidity &lt; 60 %RH</div></div>
         <div class="judge" id="j${it.k}">–</div>
         <div class="ac">
           <div class="cell"><div class="lb">สถานะ</div><div class="seg">${STAT.map(s=>`<button type="button" class="${s}" data-s="${s}">${s}</button>`).join('')}</div></div>
@@ -335,6 +343,7 @@ function upd(it){
   const j=jd(it); const el=document.getElementById('j'+it.k);
   el.className='judge '+j; el.textContent=j?MARK[j]:'–';
   const ti=document.querySelector('#r'+it.k+' input.v[data-f="T"]'); ti.className='v '+tj(it);
+  const hi=document.querySelector('#r'+it.k+' input.v[data-f="RH"]'); if(hi) hi.className='v '+hj(it);
   document.querySelectorAll('#r'+it.k+' .seg button').forEach(b=>b.classList.toggle('on',b.dataset.s===raw(it,'S')));
 }
 function cnt(){
@@ -413,7 +422,7 @@ function exportCSV(){
 function signTable(){
   const sg=ROLES.map(r=>{const s=st.sig[r]||{}; return `<td>${s.img?`<img src="${s.img}">`:''}${esc(s.name)}<br>(${s.date||'……/……/……'})</td>`;}).join('');
   return `<div class="signblk">
-  <div class="legend"><span><b>Judgment Mark</b> Air Condition: O &lt;25 °C · △ 25~30 °C · X &gt;30 °C (FAIL = X) &nbsp;|&nbsp; HPC: O &lt;30 °C · △ 30~35 °C · X &gt;35 °C</span><span><b>Safety Point</b> ควรใช้ความระมัดระวังในการตรวจสอบ</span></div>
+  <div class="legend"><span><b>Judgment Mark</b> Air Condition: O &lt;25 °C · △ 25~30 °C · X &gt;30 °C · Humidity: O &lt;60 · △ 61~70 · X &gt;70 %RH (FAIL = X) &nbsp;|&nbsp; HPC: O &lt;30 °C · △ 30~35 °C · X &gt;35 °C</span><span><b>Safety Point</b> ควรใช้ความระมัดระวังในการตรวจสอบ</span></div>
   <table class="sgt"><tr>${ROLES.map(r=>`<th>${r}</th>`).join('')}</tr><tr>${sg}</tr></table></div>`;
 }
 const TITLE='Temperature HPC and Air condition check';
@@ -430,7 +439,7 @@ function buildFullPrint(){
   <tr class="gh"><td colspan="10">HYDRAULIC POSITION CONTROL — Temperature in cabinet</td></tr>
   ${H.map(it=>`<tr><td class="c">${it.no}</td><td>${esc(it.name)}</td><td class="c">&lt; 30</td>${pc(it)}<td class="blk"></td><td class="blk"></td><td class="blk"></td><td class="blk"></td><td class="c">${mkI(it)}</td><td>${esc(st.r[it.k])}</td></tr>`).join('')}
   <tr class="gh"><td colspan="10">AIR CONDITION HSM</td></tr>
-  ${A.map(it=>`<tr><td class="c">${it.no}</td><td>${esc(it.name)}</td><td class="c">&lt; 25</td>${pc(it)}${STAT.map(s=>ck(it,s)).join('')}<td class="c">${esc(raw(it,'RH'))}</td><td class="c">${mkI(it)}</td><td>${esc(st.r[it.k])}</td></tr>`).join('')}
+  ${A.map(it=>`<tr><td class="c">${it.no}</td><td>${esc(it.name)}</td><td class="c">&lt; 25</td>${pc(it)}${STAT.map(s=>ck(it,s)).join('')}<td class="c${['D','X'].includes(hj(it))?' nb':''}">${esc(raw(it,'RH'))}</td><td class="c">${mkI(it)}</td><td>${esc(st.r[it.k])}</td></tr>`).join('')}
   </table>
   ${signTable()}
   </section>`;
