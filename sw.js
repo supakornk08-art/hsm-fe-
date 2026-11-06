@@ -1,5 +1,5 @@
-// HSM Check sheets — offline cache. เปลี่ยนเลขเวอร์ชันทุกครั้งที่อัปเดตไฟล์ index.html (เมนู EEHSM), startup.html, motor-temp.html, fault-lookup.html, flow-lube.html, descale-lube.html, cooling-fan.html, mill-motor.html, hyd-pump.html, gauge-water-air.html, hpc-air.html, earth-leak.html หรือ special-gauge.html
-const CACHE = "hsm-check-1.21.0";
+// HSM Check sheets — offline cache. เปลี่ยนเลขเวอร์ชันทุกครั้งที่อัปเดตไฟล์ index.html (เมนู EEHSM), startup.html, motor-temp.html, fault-lookup.html, flow-lube.html, descale-lube.html, cooling-fan.html, mill-motor.html, hyd-pump.html, gauge-water-air.html, hpc-air.html, earth-leak.html, special-gauge.html หรือ sg-preset.html
+const CACHE = "hsm-check-1.22.0";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./eehsm-icon-180.png", "./eehsm-icon-192.png", "./eehsm-icon-512.png",
   "./startup.html", "./startup-manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png",
   "./motor-temp.html", "./motor-manifest.webmanifest", "./motor-icon-180.png", "./motor-icon-192.png", "./motor-icon-512.png",
@@ -12,7 +12,8 @@ const FILES = ["./", "./index.html", "./manifest.webmanifest", "./eehsm-icon-180
   "./gauge-water-air.html", "./gauge-manifest.webmanifest", "./gauge-icon-180.png", "./gauge-icon-192.png", "./gauge-icon-512.png",
   "./hpc-air.html", "./hpcair-manifest.webmanifest", "./hpcair-icon-180.png", "./hpcair-icon-192.png", "./hpcair-icon-512.png",
   "./special-gauge.html", "./spgauge-manifest.webmanifest", "./spgauge-icon-180.png", "./spgauge-icon-192.png", "./spgauge-icon-512.png",
-  "./earth-leak.html", "./earth-manifest.webmanifest", "./earth-icon-180.png", "./earth-icon-192.png", "./earth-icon-512.png"];
+  "./earth-leak.html", "./earth-manifest.webmanifest", "./earth-icon-180.png", "./earth-icon-192.png", "./earth-icon-512.png",
+  "./sg-preset.html", "./sg-manifest.webmanifest", "./sg-icon-180.png", "./sg-icon-192.png", "./sg-icon-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k))))); self.clients.claim(); });
 self.addEventListener("fetch", e => {
