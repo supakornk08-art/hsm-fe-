@@ -167,6 +167,8 @@ details.grp summary::-webkit-details-marker{display:none}
       <div><label>Date</label><input type="date" id="fDate"></div>
       <div><label>Shift</label>
         <select id="fShift"><option value="">-</option><option>A</option><option>B</option><option>C</option><option>Day</option></select></div>
+      <div class="full"><label>ช่วงเวลาตรวจ</label>
+        <select id="fTime"><option value="">-</option><option>Morning</option><option>Night</option></select></div>
       <div class="full"><label>Inspector</label><input id="fInsp" placeholder="ชื่อผู้ตรวจ"></div>
     </div>
     <div id="groups"></div>
@@ -367,6 +369,7 @@ const fDate=document.getElementById('fDate'),fShift=document.getElementById('fSh
 fDate.value=st.date||new Date(Date.now()+7*3600e3).toISOString().slice(0,10);
 fShift.value=st.shift; fInsp.value=st.insp;
 fDate.oninput=()=>{st.date=fDate.value;save()}; fShift.onchange=()=>{st.shift=fShift.value;save()};
+const fTime=document.getElementById('fTime'); fTime.value=st.time||''; fTime.onchange=()=>{st.time=fTime.value;save()};
 fInsp.oninput=()=>{st.insp=fInsp.value;save()};
 st.date=fDate.value;
 
@@ -375,7 +378,7 @@ function counts(){let n=0,c={O:0,D:0,X:0}; ITEMS.forEach(it=>{const j=jd(it); if
 const abn=()=>ITEMS.filter(it=>{const j=jd(it); return j==='D'||j==='X';}).sort((a,b)=>RANK[jd(b)]-RANK[jd(a)]);
 function renderSummary(){
   const {n,c}=counts();
-  sHead.textContent=`${st.date||'-'} · Shift ${st.shift||'-'} · ${st.insp||'(ยังไม่ระบุผู้ตรวจ)'}`;
+  sHead.textContent=`${st.date||'-'} · Shift ${st.shift||'-'} · ${st.time||'-'} · ${st.insp||'(ยังไม่ระบุผู้ตรวจ)'}`;
   sAll.firstChild.nodeValue=n+'/'+ITEMS.length; sO.firstChild.nodeValue=c.O; sD.firstChild.nodeValue=c.D; sX.firstChild.nodeValue=c.X;
   sGroups.innerHTML=GROUPS.map(G=>{const its=ITEMS.filter(it=>it.g===G.g); const f=its.filter(i=>jd(i)).length;
     return `<span>${G.name}</span><span class="cnt ${f===its.length?'done':''}">${f}/${its.length}</span><div class="prog"><i style="width:${f/its.length*100}%"></i></div>`;}).join('');
@@ -419,7 +422,7 @@ function saveSign(){
 // ---------- Actions ----------
 function resetAll(){ if(!confirm('ล้างข้อมูลทั้งหมด (รวมลายเซ็น)?')) return; st.v={}; st.r={}; st.sig={}; save(); location.reload(); }
 function exportCSV(){
-  const rows=[['Date',st.date,'Shift',st.shift,'Inspector',st.insp,'Line','HSM'],[],['Group','No','Inspection Item','Standard','RM / Actual','FM','Judgment','Remark']];
+  const rows=[['Date',st.date,'Shift',st.shift,'Time',st.time||'','Inspector',st.insp,'Line','HSM'],[],['Group','No','Inspection Item','Standard','RM / Actual','FM','Judgment','Remark']];
   ITEMS.forEach(it=>rows.push([GN[it.g],it.no,it.name,it.std,raw(it,it.c[0].f),it.c[1]?raw(it,'FM'):'',mkI(it),st.r[it.k]||'']));
   rows.push([],['Sign-off','Name','Date']); ROLES.forEach(r=>{const s=st.sig[r]||{}; rows.push([r,s.name||'',s.date||'']);});
   if(window.__eehsmRows){window.__eehsmRows(rows);return;}
@@ -436,7 +439,7 @@ function signTable(){
   <div style="display:flex;justify-content:space-between;margin-top:2px"><span>(24-10-24 Rev.00)</span><span>แก้ไขครั้งที่ (REV.) : 01</span></div></div>`;
 }
 const TITLE='Special Gauge Check Sheet';
-const hdrLine=pg=>`<p style="display:flex;justify-content:space-between;margin:0 0 4px"><span>Date: ${st.date} &nbsp; Section: EHSM &nbsp; Shift: ${esc(st.shift)} &nbsp; Period: 1 Day${pg?'':' &nbsp; Inspector: '+esc(st.insp)}</span>${pg?'<span>Page 1 / 1</span>':''}</p>`;
+const hdrLine=pg=>`<p style="display:flex;justify-content:space-between;margin:0 0 4px"><span>Date: ${st.date} &nbsp; Section: EHSM &nbsp; Shift: ${esc(st.shift)} &nbsp; Time: ${esc(st.time||'-')} &nbsp; Period: 1 Day${pg?'':' &nbsp; Inspector: '+esc(st.insp)}</span>${pg?'<span>Page 1 / 1</span>':''}</p>`;
 const bad=(it,c)=>['D','X'].includes(cj(it,c))?' nb':'';
 // ช่อง Open/Close: ✓ ในคอลัมน์ที่เลือก
 function ocCells(it,c){const v=raw(it,c.f), b=bad(it,c);
@@ -623,17 +626,17 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")) navigat
     var t=new Date(), hm=String(t.getHours()).padStart(2,'0')+String(t.getMinutes()).padStart(2,'0');
     var id=NO+'-'+F+'-'+(st.date||'nodate')+'-'+(st.shift||'x')+'-'+t.getTime().toString(36);
     var title=(document.querySelector('header h1')||{}).textContent||F;
-    var p={id:id,sheetNo:NO,sheet:NO+' '+title.trim(),date:st.date||'',shift:st.shift||'',inspector:st.insp||'',
+    var p={id:id,sheetNo:NO,sheet:NO+' '+title.trim(),date:st.date||'',shift:st.shift||'',time:st.time||'',inspector:st.insp||'',
       recorded:+all[0]||0,total:+all[1]||0,O:+g('sO')||0,D:+g('sD')||0,X:+g('sX')||0,
       items:JSON.stringify({file:F,rows:rows,state:state}),submittedAt:t.toISOString()};
-    p.points=eeNorm(rows||[],{id:id,date:p.date,shift:p.shift,sheetNo:NO,sheet:p.sheet,inspector:p.inspector,submittedAt:p.submittedAt});
+    p.points=eeNorm(rows||[],{id:id,date:p.date,shift:p.shift,time:p.time,sheetNo:NO,sheet:p.sheet,inspector:p.inspector,submittedAt:p.submittedAt});
     var fn='EEHSM_'+NO+'_'+F+'_'+(st.date||'nodate')+'_'+(st.shift||'x')+'_'+hm+'.json';
     return {p:p,fn:fn};
   }
   b.addEventListener('click',function(){
-    var miss=[]; if(!st.date)miss.push('Date'); if(!st.shift)miss.push('Shift'); if(!st.insp)miss.push('Inspector');
+    var miss=[]; if(!st.date)miss.push('Date'); if(!st.shift)miss.push('Shift'); if(!st.time)miss.push('ช่วงเวลา'); if(!st.insp)miss.push('Inspector');
     var d=build(), p=d.p;
-    B.innerHTML='<div class="ee-sum"><span>'+esc(p.date||'-')+'</span><span>กะ '+esc(p.shift||'-')+'</span><span>'+esc(p.inspector||'-')+'</span><span>บันทึก '+p.recorded+'/'+p.total+'</span>'+(p.D?'<span>△ '+p.D+'</span>':'')+(p.X?'<span>X '+p.X+'</span>':'')+'</div>'+
+    B.innerHTML='<div class="ee-sum"><span>'+esc(p.date||'-')+'</span><span>กะ '+esc(p.shift||'-')+'</span><span>'+esc(p.time||'-')+'</span><span>'+esc(p.inspector||'-')+'</span><span>บันทึก '+p.recorded+'/'+p.total+'</span>'+(p.D?'<span>△ '+p.D+'</span>':'')+(p.X?'<span>X '+p.X+'</span>':'')+'</div>'+
       (miss.length?'<p class="ee-warn">ยังไม่ได้กรอก: '+miss.join(', ')+' — กรอกให้ครบก่อนส่ง</p>':'')+
       (p.recorded<p.total?'<p class="ee-warn">ยังกรอกไม่ครบทุกรายการ ('+p.recorded+'/'+p.total+') ส่งได้ แต่ตรวจสอบก่อน</p>':'')+
       '<p>ไฟล์ที่จะส่ง:</p><div class="ee-fn">'+esc(d.fn)+'</div>'+
