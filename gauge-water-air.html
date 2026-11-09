@@ -168,7 +168,9 @@ details.grp summary::-webkit-details-marker{display:none}
   #printArea .sgt th{font-size:8.5px;padding:2px}
   #printArea .sgt td{text-align:center;vertical-align:bottom;height:44px;padding:1px 2px;font-size:8px;line-height:1.15;overflow:hidden}
   #printArea .sgt img{max-height:24px;max-width:100%;display:block;margin:0 auto 1px}
-  #printArea .pg{display:flex;flex-direction:column;min-height:270mm}
+  #printArea .pg{display:flex;flex-direction:column;min-height:255mm}
+  #printArea .prow{display:flex;gap:4mm;align-items:center;break-inside:avoid;page-break-inside:avoid}
+  #printArea .prow .pkeys{flex:1;flex-direction:column;flex-wrap:nowrap;gap:3px;font-size:8.5px}
   #printArea .pg .signblk{margin-top:auto;padding-top:5px}
   @page{size:A4;margin:8mm}
 }
@@ -524,11 +526,13 @@ function buildFullPrint(){
   ${ITEMS.map(it=>`<tr><td class="c">${it.no}</td><td>${esc(it.name)} ${esc(spec(it))}</td><td class="c">${esc(it.std)}</td><td class="c${['D','X'].includes(jd(it))?' nb':''}">${esc(raw(it))}</td><td class="c">${mkI(it)}</td><td>${esc(st.r[it.k])}</td></tr>`).join('')}
   </table>
   <h4>Water Cooling</h4>
-  <div class="pfig" style="grid-template-columns:43.6fr 56.4fr;width:84%">
-    <div style="display:grid;gap:4px">${figHTML('wall')}${figHTML('hmi')}</div>${figHTML('cab')}</div>
-  ${pkeys(['1','2','3','2·3','4','5'])}
+  <div class="prow">
+    <div class="pfig" style="grid-template-columns:43.6fr 56.4fr;width:126mm;margin:0">
+      <div style="display:grid;gap:4px">${figHTML('wall')}${figHTML('hmi')}</div>${figHTML('cab')}</div>
+    ${pkeys(['1','2','3','2·3','4','5'])}
+  </div>
   <h4>Air Service Unit</h4>
-  <div class="pfig" style="grid-template-columns:83.6fr 16.4fr;width:100%">${figHTML('sch')}${figHTML('air')}</div>
+  <div class="pfig" style="grid-template-columns:83.6fr 16.4fr;width:175mm">${figHTML('sch')}${figHTML('air')}</div>
   ${pkeys(['6·8','7·9','SV'])}
   ${signTable()}
   </section>`;
@@ -562,7 +566,8 @@ let printMode='full';
 function printFull(){ printMode='full'; window.print(); }
 function printSummary(){ printMode='summary'; window.print(); }
 window.addEventListener('afterprint',()=>{ printMode='full'; });
-window.addEventListener('beforeprint',()=>{ if(printMode==='summary') buildSummaryPrint(); else buildFullPrint(); fitOnePage(); });
+// แบบเต็ม: ขนาดรูปกำหนดเป็น mm ตายตัว พอดี 1 หน้าทั้ง A4 และ Letter ไม่ต้องย่อด้วย zoom (Safari/iPhone วัดขนาดผิดแล้วย่อตัวหนังสือจนเล็ก)
+window.addEventListener('beforeprint',()=>{ if(printMode==='summary'){ buildSummaryPrint(); fitOnePage(); } else buildFullPrint(); });
 if("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
 <!-- EEHSM: back to menu -->
