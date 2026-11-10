@@ -57,6 +57,32 @@ select.chip{appearance:none;padding-right:14px;margin-left:auto}
 .me{width:16px;height:16px;border-radius:50%;background:#2563eb;border:3px solid #fff;box-shadow:0 0 0 6px rgba(37,99,235,.25)}
 .leaflet-popup-content{font-family:"Noto Sans Thai",sans-serif;margin:10px 12px}
 .pop b{font-size:14px}.pop div{font-size:12px;margin-top:2px}
+.survey{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-top:14px;box-shadow:var(--shadow)}
+.survey h2{font-size:16px;margin:0 0 2px}
+.svbtns{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 4px;align-items:center}
+.btn{font:inherit;font-size:14px;border:1px solid transparent;border-radius:10px;padding:10px 14px;cursor:pointer;background:var(--acc);color:#fff;font-weight:600}
+@media(prefers-color-scheme:dark){.btn{color:#111}}
+.btn.ghost{background:var(--bg);color:var(--ink);border-color:var(--line);font-weight:500}
+.btn.on{background:var(--ink);color:var(--bg)}
+.btn.sm{font-size:12px;padding:5px 10px;border-radius:8px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{font:inherit;font-size:13px;border:0;background:var(--bg);color:var(--ink);padding:9px 12px;cursor:pointer}
+.seg button.on{background:var(--ink);color:var(--bg)}
+.svinfo{font-size:13px;color:var(--mute);margin:8px 0}
+.svinfo b{color:var(--ink)}
+.svquick{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}
+.svquick a{font-size:12px;color:var(--acc);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:4px 10px;background:var(--bg)}
+.svsec{font-size:13px;font-weight:600;margin:12px 0 2px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.row .d{font-size:12px;color:var(--mute)}
+.row .act a{font-size:12px;color:var(--acc);text-decoration:none;margin-left:10px;white-space:nowrap}
+.vill{width:12px;height:12px;border-radius:50%;background:#0ea5e9;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.svpin{font-size:26px;line-height:26px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.4))}
+.svlog textarea{width:100%;font:inherit;font-size:13px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:6px 8px;margin-top:4px;resize:vertical}
+.logitem{border-top:1px solid var(--line);padding:8px 0}
+.logitem .h{display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:sp 1s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
 .note{font-size:12px;color:var(--mute);margin:22px 0 0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
 .note b{color:var(--ink)}
 </style>
@@ -74,6 +100,18 @@ select.chip{appearance:none;padding-right:14px;margin-left:auto}
       <div class="legend"><span><i class="b-new"></i>มือ 1</span><span><i class="b-res"></i>มือสอง</span><span id="geostat">กำลังค้นพิกัด…</span></div>
       <button id="loc">📍 ตำแหน่งฉัน</button>
     </div>
+  </div>
+
+  <div class="survey" id="survey">
+    <h2>🧭 Survey ภาคสนาม</h2>
+    <div class="sub">ขับไปถึงย่านที่สนใจ → กดปักหมุด → ระบบค้นหมู่บ้าน/ชุมชนรอบจุดนั้นสดจาก OpenStreetMap พร้อมปุ่มค้นประกาศขาย</div>
+    <div class="svbtns">
+      <button class="btn" id="svgps">📍 ปักหมุดตรงนี้</button>
+      <button class="btn ghost" id="svtap">👆 แตะแผนที่เพื่อปัก</button>
+      <div class="seg" id="svr"><button data-r="5000" class="on">5 กม.</button><button data-r="10000">10 กม.</button></div>
+    </div>
+    <div id="svout"></div>
+    <div class="svlog" id="svlog"></div>
   </div>
 
   <div class="chips" id="chips"></div>
@@ -207,6 +245,109 @@ document.getElementById("loc").onclick=()=>{
     map.flyTo(ll,13);
   },()=>{document.getElementById("geostat").textContent="เปิดตำแหน่งไม่ได้ (ตรวจสิทธิ์ location)"});
 };
+
+/* ---------- Survey ภาคสนาม ---------- */
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const G=q=>"https://www.google.com/search?q="+encodeURIComponent(q);
+const svLayer=L.layerGroup().addTo(map);
+let svR=5000,svTap=false,svBusy=false,svLast=null;
+const $=id=>document.getElementById(id);
+function loadLog(){try{return JSON.parse(localStorage.getItem("svlog")||"[]")}catch(e){return[]}}
+function saveLog(a){try{localStorage.setItem("svlog",JSON.stringify(a))}catch(e){}}
+
+document.querySelectorAll("#svr button").forEach(b=>b.onclick=()=>{
+  svR=+b.dataset.r;document.querySelectorAll("#svr button").forEach(x=>x.classList.toggle("on",x===b));
+  if(svLast) survey(svLast,false);
+});
+$("svtap").onclick=()=>{svTap=!svTap;$("svtap").classList.toggle("on",svTap);$("svtap").textContent=svTap?"👆 แตะจุดบนแผนที่…":"👆 แตะแผนที่เพื่อปัก";if(svTap)$("map").scrollIntoView({behavior:"smooth",block:"center"})};
+map.on("click",e=>{if(!svTap)return;svTap=false;$("svtap").classList.remove("on");$("svtap").textContent="👆 แตะแผนที่เพื่อปัก";survey([e.latlng.lat,e.latlng.lng],true)});
+$("svgps").onclick=()=>{
+  if(!navigator.geolocation){$("svout").innerHTML='<div class="svinfo">เครื่องนี้ไม่รองรับ GPS</div>';return}
+  $("svout").innerHTML='<div class="svinfo"><span class="spin"></span>กำลังอ่าน GPS…</div>';
+  navigator.geolocation.getCurrentPosition(p=>survey([p.coords.latitude,p.coords.longitude],true),
+    ()=>{$("svout").innerHTML='<div class="svinfo">อ่านตำแหน่งไม่ได้ — อนุญาต Location ให้เบราว์เซอร์ หรือใช้ "แตะแผนที่เพื่อปัก"</div>'},
+    {enableHighAccuracy:true,timeout:15000});
+};
+
+async function reverse(ll){
+  try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=14&accept-language=th&lat=${ll[0]}&lon=${ll[1]}`);const j=await r.json();const a=j.address||{};
+    const tambon=a.suburb||a.village||a.town||a.quarter||a.city_district||"";
+    const amphoe=a.county||a.city||a.district||a.municipality||"";
+    const prov=a.state||a.province||"";
+    return {tambon,amphoe,prov,label:[tambon,amphoe,prov].filter(Boolean).join(" ")};
+  }catch(e){return {tambon:"",amphoe:"",prov:"",label:""}}
+}
+async function overpass(ll,r){
+  const q=`[out:json][timeout:25];(
+    way["landuse"="residential"]["name"](around:${r},${ll[0]},${ll[1]});
+    relation["landuse"="residential"]["name"](around:${r},${ll[0]},${ll[1]});
+    node["place"~"village|hamlet|neighbourhood|quarter"]["name"](around:${r},${ll[0]},${ll[1]});
+    way["place"~"neighbourhood|quarter"]["name"](around:${r},${ll[0]},${ll[1]});
+    way["name"~"หมู่บ้าน|โครงการ|วิลเลจ|Village|Ville|Home|Town|ศุภาลัย|พฤกษา|ลภาวัลย์|คาซ่า|Casa|Deco",i](around:${r},${ll[0]},${ll[1]});
+  );out center tags;`;
+  for(const ep of["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter"]){
+    try{const res=await fetch(ep,{method:"POST",body:"data="+encodeURIComponent(q),headers:{"Content-Type":"application/x-www-form-urlencoded"}});
+      if(!res.ok)continue;const j=await res.json();
+      const seen=new Map();
+      for(const e of j.elements){
+        const n=e.tags&&(e.tags["name:th"]||e.tags.name);if(!n)continue;
+        if(e.tags.highway||e.tags.amenity||e.tags.shop)continue;
+        const p=e.center?[e.center.lat,e.center.lon]:[e.lat,e.lon];if(p[0]==null)continue;
+        const d=dist(ll,p);const isProj=/หมู่บ้าน|โครงการ|วิลเลจ|village|ville|home|town|ศุภาลัย|พฤกษา|คาซ่า|casa|deco/i.test(n)||e.tags.landuse==="residential";
+        if(!seen.has(n)||seen.get(n).d>d)seen.set(n,{name:n,ll:p,d,isProj});
+      }
+      return [...seen.values()].sort((a,b)=>(b.isProj-a.isProj)||(a.d-b.d)).slice(0,60);
+    }catch(e){}
+  }
+  return null;
+}
+async function survey(ll,log){
+  if(svBusy)return;svBusy=true;svLast=ll;
+  svLayer.clearLayers();
+  L.circle(ll,{radius:svR,color:"#ef4444",weight:2,dashArray:"6 4",fillOpacity:.05}).addTo(svLayer);
+  L.marker(ll,{icon:L.divIcon({className:"",html:'<div class="svpin">📌</div>',iconSize:[26,26],iconAnchor:[6,26]})}).addTo(svLayer);
+  map.flyToBounds(L.latLng(ll).toBounds(svR*2.2),{duration:.8});
+  $("svout").innerHTML='<div class="svinfo"><span class="spin"></span>กำลังค้นหมู่บ้านรอบหมุด…</div>';
+  const [addr,vill]=await Promise.all([reverse(ll),overpass(ll,svR)]);
+  const km=svR/1000,area=addr.amphoe||addr.tambon||"ระยอง";
+  const near=ITEMS.filter(i=>POS[i.id]&&dist(ll,POS[i.id].ll)<=km).map(i=>({...i,dd:dist(ll,POS[i.id].ll)})).sort((a,b)=>a.dd-b.dd);
+  let h=`<div class="svinfo">หมุดที่ <b>${esc(addr.label||ll.map(x=>x.toFixed(4)).join(", "))}</b> · รัศมี ${km} กม.</div>
+  <div class="svquick">
+    <a target="_blank" href="${G("ขายบ้าน "+(addr.tambon?"ต."+addr.tambon+" ":"")+area)}">🔎 ขายบ้านในตำบลนี้</a>
+    <a target="_blank" href="${G("บ้านมือสอง ขาย "+area+" "+addr.prov)}">🔎 บ้านมือสอง ${esc(area)}</a>
+    <a target="_blank" href="${G("โครงการบ้านใหม่ "+area+" "+addr.prov)}">🔎 โครงการใหม่ ${esc(area)}</a>
+    <a target="_blank" href="${G("NPA บ้าน "+area+" "+addr.prov)}">🔎 NPA ${esc(area)}</a>
+    <a target="_blank" href="https://www.google.com/maps/search/${encodeURIComponent("หมู่บ้านจัดสรร")}/@${ll[0]},${ll[1]},13z">🗺️ หมู่บ้านใน Google Maps</a>
+  </div>`;
+  if(near.length){h+=`<div class="svsec">จากรายการที่รวบรวมไว้ (${near.length})</div>`+near.map(i=>`<div class="row"><div><span class="num b-${i.type}" style="width:18px;height:18px;font-size:10px">${i.id}</span>${esc(i.name)} <span class="d">· ${i.price} · ${i.dd.toFixed(1)} กม.</span></div><div class="act"><a href="#c${i.id}" onclick="pick(${i.id},false);return false">ดู</a></div></div>`).join("")}
+  if(vill===null){h+=`<div class="svinfo">ค้นข้อมูล OpenStreetMap ไม่สำเร็จ (เน็ตช้าหรือเซิร์ฟเวอร์ไม่ว่าง) — ลองกดใหม่ หรือใช้ปุ่มค้นด้านบน</div>`}
+  else{
+    h+=`<div class="svsec">หมู่บ้าน/ชุมชนรอบหมุดจาก OpenStreetMap (${vill.length})</div>`;
+    if(!vill.length)h+=`<div class="svinfo">ไม่พบชื่อหมู่บ้านใน OSM — ลองขยายเป็น 10 กม. หรือใช้ Google Maps</div>`;
+    h+=vill.map(v=>`<div class="row"><div>${v.isProj?"🏘️":"📍"} ${esc(v.name)} <span class="d">· ${v.d.toFixed(1)} กม.</span></div><div class="act"><a target="_blank" href="${G("ขายบ้าน "+v.name+" "+area)}">ประกาศขาย</a><a target="_blank" href="https://www.google.com/maps/search/?api=1&query=${v.ll[0]},${v.ll[1]}">แผนที่</a></div></div>`).join("");
+    vill.forEach(v=>L.marker(v.ll,{icon:L.divIcon({className:"",html:'<div class="vill"></div>',iconSize:[12,12],iconAnchor:[6,6]})}).addTo(svLayer).bindPopup(`<div class="pop"><b>${esc(v.name)}</b><div>${v.d.toFixed(1)} กม. จากหมุด</div><div><a target="_blank" href="${G("ขายบ้าน "+v.name+" "+area)}">ค้นประกาศขาย</a></div></div>`));
+  }
+  $("svout").innerHTML=h;
+  if(log){const a=loadLog();a.unshift({t:Date.now(),ll,label:addr.label,r:km,n:vill?vill.length:0,top:(vill||[]).slice(0,8).map(v=>v.name),note:""});saveLog(a.slice(0,50))}
+  drawLog();svBusy=false;
+}
+function drawLog(){
+  const a=loadLog();
+  if(!a.length){$("svlog").innerHTML="";return}
+  $("svlog").innerHTML=`<div class="svsec" style="display:flex;justify-content:space-between;align-items:center">จุดที่เคยปัก (${a.length})<span><button class="btn ghost sm" id="svcopy">📋 คัดลอกส่ง Claude</button> <button class="btn ghost sm" id="svclr">ล้าง</button></span></div>`+
+  a.map((p,k)=>`<div class="logitem"><div class="h"><span>📌 ${esc(p.label||p.ll.map(x=>x.toFixed(4)).join(", "))} · ${p.r} กม. · ${p.n} หมู่บ้าน</span><span class="d">${new Date(p.t).toLocaleString("th-TH",{dateStyle:"short",timeStyle:"short"})}</span></div>
+   <div style="margin-top:4px"><button class="btn ghost sm" data-go="${k}">ดูอีกครั้ง</button></div>
+   <textarea rows="1" data-note="${k}" placeholder="โน้ต เช่น เห็นป้ายขาย 3.2 ล้าน โทร 08x…">${esc(p.note)}</textarea></div>`).join("");
+  document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>survey(loadLog()[+b.dataset.go].ll,false));
+  document.querySelectorAll("[data-note]").forEach(t=>t.oninput=()=>{const a=loadLog();a[+t.dataset.note].note=t.value;saveLog(a)});
+  $("svclr").onclick=()=>{if($("svclr").dataset.c){saveLog([]);svLayer.clearLayers();$("svout").innerHTML="";drawLog()}else{$("svclr").dataset.c=1;$("svclr").textContent="กดอีกครั้งเพื่อยืนยัน"}};
+  $("svcopy").onclick=async()=>{
+    const txt="ช่วยหาบ้าน/หมู่บ้านประกาศขายรอบจุดเหล่านี้ให้หน่อย:\n"+loadLog().map((p,i)=>`${i+1}. ${p.label||""} (${p.ll[0].toFixed(5)}, ${p.ll[1].toFixed(5)}) รัศมี ${p.r} กม.${p.top.length?"\n   หมู่บ้านใกล้: "+p.top.join(", "):""}${p.note?"\n   โน้ต: "+p.note:""}`).join("\n");
+    try{await navigator.clipboard.writeText(txt);$("svcopy").textContent="✅ คัดลอกแล้ว"}catch(e){$("svcopy").textContent="คัดลอกไม่ได้"}
+    setTimeout(()=>{const b=$("svcopy");if(b)b.textContent="📋 คัดลอกส่ง Claude"},2000);
+  };
+}
+drawLog();
 </script>
 </body>
 </html>
