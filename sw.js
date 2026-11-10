@@ -1,5 +1,5 @@
 // HSM Check sheets — offline cache. เปลี่ยนเลขเวอร์ชันทุกครั้งที่อัปเดตไฟล์ index.html (เมนู EEHSM), startup.html, motor-temp.html, fault-lookup.html, flow-lube.html, descale-lube.html, cooling-fan.html, mill-motor.html, hyd-pump.html, gauge-water-air.html, hpc-air.html, earth-leak.html, special-gauge.html หรือ sg-preset.html
-const CACHE = "hsm-check-1.22.3";
+const CACHE = "hsm-check-1.23.0";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./eehsm-icon-180.png", "./eehsm-icon-192.png", "./eehsm-icon-512.png",
   "./startup.html", "./startup-manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png",
   "./motor-temp.html", "./motor-manifest.webmanifest", "./motor-icon-180.png", "./motor-icon-192.png", "./motor-icon-512.png",
@@ -19,7 +19,15 @@ self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Pr
 self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET" || new URL(req.url).origin !== location.origin) return;
-  // ใช้ไฟล์ในเครื่องก่อน (เปิดได้แม้ไม่มีเน็ต) แล้วค่อยอัปเดตจากเซิร์ฟเวอร์เบื้องหลัง
+  const isPage = req.mode === "navigate" || /\.(html|webmanifest)$|\/$/.test(new URL(req.url).pathname);
+  if (isPage) {
+    // หน้าใบตรวจ: มีเน็ต = โหลดตัวล่าสุดจากเซิร์ฟเวอร์ทันที (แล้วเก็บสำเนาไว้) · ไม่มีเน็ต = ใช้สำเนาในเครื่อง
+    e.respondWith(caches.open(CACHE).then(c =>
+      fetch(req, { cache: "no-store" }).then(res => { if (res.ok) c.put(req, res.clone()); return res; })
+        .catch(() => c.match(req, { ignoreSearch: true }).then(hit => hit || c.match("./index.html")))));
+    return;
+  }
+  // รูป/ไอคอน: ใช้ไฟล์ในเครื่องก่อน แล้วค่อยอัปเดตจากเซิร์ฟเวอร์เบื้องหลัง
   e.respondWith(caches.open(CACHE).then(async c => {
     const hit = await c.match(req, { ignoreSearch: true });
     const net = fetch(req).then(res => { if (res.ok) c.put(req, res.clone()); return res; }).catch(() => hit);
