@@ -422,7 +422,7 @@ window.addEventListener('afterprint',()=>{ printMode='full'; });
 window.addEventListener('beforeprint',buildPrint);
 function buildPrint(){
   if(printMode==='summary'){ buildSummaryPrint(); fitOnePage(); return; }
-  // หน้า 1 = RM + FM (FM AGC ครบ 1–15 อยู่หน้าเดียวกัน) · หน้า 2 = DC + ช่องลงนาม
+  // หน้า 1 = RM + FM (FM AGC ครบ 1–15 อยู่หน้าเดียวกัน) · หน้า 2 = DC · ทั้งสองหน้ามีช่องลงนาม
   const pages=[ITEMS.filter(it=>it.gi<=1), ITEMS.filter(it=>it.gi>=2)];
   const rowsOf=its=>{let last=-1; return its.map(it=>{let h='';
     if(it.gi!==last){ last=it.gi; h=`<tr class="gh"><td></td><td></td><td colspan="12">${DATA[it.gi].g}${it.no>1?' (ต่อ)':''}</td></tr>`; }
@@ -438,7 +438,7 @@ function buildPrint(){
   <tr><th>DE</th><th>Center</th><th>NDE</th></tr>
   ${rowsOf(its)}
   </table>
-  ${pi===pages.length-1?signTable():''}
+  ${signTable()}
   </section>`).join('');
   fitOnePage();
 }
