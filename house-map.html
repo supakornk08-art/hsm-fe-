@@ -3,99 +3,209 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>บ้านขายรอบหนองละลอก รัศมี 20 กม. (แผนที่)</title>
+<title>บ้านขายรอบหนองละลอก รัศมี 20 กม.</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-html,body{margin:0;height:100%;font-family:system-ui,-apple-system,"Noto Sans Thai",sans-serif}
-#app{display:flex;flex-direction:column;height:100%}
-#bar{padding:8px 10px;background:#fff;border-bottom:1px solid #ddd;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-#bar b{font-size:14px;margin-right:6px}
-.chip{border:1px solid #ccc;background:#fff;border-radius:999px;padding:5px 12px;font-size:13px;cursor:pointer}
-.chip.on{background:#222;color:#fff;border-color:#222}
-#map{flex:1}
-#status{font-size:11px;color:#666;padding:4px 10px;background:#fafafa;border-top:1px solid #eee}
-.pin{border-radius:50%;color:#fff;font-weight:700;font-size:12px;width:26px;height:26px;line-height:26px;text-align:center;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5)}
-.pin.approx{border-style:dashed;opacity:.85}
-.pop b{font-size:14px}.pop div{font-size:12px;margin-top:3px}
-.pop a{font-size:12px;margin-right:10px}
+:root{--bg:#f6f5f1;--card:#fff;--ink:#1f2328;--mute:#6b7280;--line:#e4e2da;--new:#0f766e;--res:#b45309;--npa:#7c3aed;--acc:#1d4ed8;--shadow:0 1px 3px rgba(0,0,0,.06),0 4px 14px rgba(0,0,0,.04)}
+@media(prefers-color-scheme:dark){:root{--bg:#15171a;--card:#1e2126;--ink:#e8eaed;--mute:#9aa0a6;--line:#2e3238;--new:#2dd4bf;--res:#fbbf24;--npa:#a78bfa;--acc:#7aa2ff;--shadow:none}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans Thai",system-ui,-apple-system,sans-serif;line-height:1.55}
+.wrap{max-width:820px;margin:0 auto;padding:16px 14px 40px}
+h1{font-size:21px;margin:2px 0 2px;font-weight:700}
+.sub{color:var(--mute);font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;box-shadow:var(--shadow)}
+.stat .n{font-size:20px;font-weight:700}
+.stat .l{font-size:12px;color:var(--mute)}
+.stat.new .n{color:var(--new)}.stat.res .n{color:var(--res)}.stat.npa .n{color:var(--npa)}
+.mapbox{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+#map{height:min(58vh,440px);background:#ddd}
+@media(prefers-color-scheme:dark){.leaflet-tile-pane{filter:brightness(.75) invert(1) contrast(.9) hue-rotate(200deg) saturate(.4)}}
+.mapfoot{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;font-size:12px;color:var(--mute);border-top:1px solid var(--line)}
+.mapfoot button{font:inherit;font-size:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:4px 10px;cursor:pointer}
+.legend{display:flex;gap:12px;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 6px;position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:500}
+.chip{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 14px;font-size:14px;cursor:pointer}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip .c{opacity:.6;margin-left:4px;font-size:12px}
+select.chip{appearance:none;padding-right:14px;margin-left:auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0;box-shadow:var(--shadow);cursor:pointer;transition:outline-color .2s}
+.card.hl{outline:2px solid var(--acc);outline-offset:-1px}
+.top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.name{font-weight:600;font-size:16px}
+.price{font-weight:700;font-size:16px;white-space:nowrap}
+.num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;color:#fff;font-size:12px;font-weight:700;margin-right:8px;vertical-align:1px}
+.tag{display:inline-block;font-size:12px;border-radius:6px;padding:1px 8px;margin-right:6px;font-weight:500}
+.t-new{background:color-mix(in srgb,var(--new) 15%,transparent);color:var(--new)}
+.t-res{background:color-mix(in srgb,var(--res) 15%,transparent);color:var(--res)}
+.t-npa{background:color-mix(in srgb,var(--npa) 15%,transparent);color:var(--npa)}
+.b-new{background:var(--new)}.b-res{background:var(--res)}.b-npa{background:var(--npa)}
+@media(prefers-color-scheme:dark){.num{color:#111}}
+.meta{font-size:13px;color:var(--mute);margin:6px 0}
+.specs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px}
+.spec{font-size:12px;border:1px solid var(--line);border-radius:6px;padding:1px 8px;color:var(--ink)}
+.desc{font-size:14px}
+.links{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+.links a{font-size:13px;color:var(--acc);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:4px 10px;background:var(--bg)}
+.approx{font-size:11px;color:var(--mute);font-style:italic}
+.pin{border-radius:50%;color:#fff;font-weight:700;font-size:12px;width:28px;height:28px;line-height:24px;text-align:center;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.45);font-family:"Noto Sans Thai",sans-serif;transition:transform .2s}
+.pin.approx{border-style:dashed}
+.pin.sel{transform:scale(1.35)}
+.me{width:16px;height:16px;border-radius:50%;background:#2563eb;border:3px solid #fff;box-shadow:0 0 0 6px rgba(37,99,235,.25)}
+.leaflet-popup-content{font-family:"Noto Sans Thai",sans-serif;margin:10px 12px}
+.pop b{font-size:14px}.pop div{font-size:12px;margin-top:2px}
+.note{font-size:12px;color:var(--mute);margin:22px 0 0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.note b{color:var(--ink)}
 </style>
 </head>
 <body>
-<div id="app">
-  <div id="bar"><b>บ้านขายรอบหนองละลอก</b>
-    <button class="chip on" data-f="all">ทั้งหมด</button>
-    <button class="chip" data-f="new">มือ 1</button>
-    <button class="chip" data-f="res">มือสอง</button>
-    <button class="chip" id="loc">📍 ตำแหน่งฉัน</button>
+<div class="wrap">
+  <h1>🏠 บ้านประกาศขาย รอบนิคมหนองละลอก</h1>
+  <div class="sub">จุดอ้างอิง ต.หนองละลอก อ.บ้านค่าย จ.ระยอง · รัศมี 20 กม. · ข้อมูล ณ 10 พ.ย. 2569</div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="mapbox">
+    <div id="map"></div>
+    <div class="mapfoot">
+      <div class="legend"><span><i class="b-new"></i>มือ 1</span><span><i class="b-res"></i>มือสอง</span><span id="geostat">กำลังค้นพิกัด…</span></div>
+      <button id="loc">📍 ตำแหน่งฉัน</button>
+    </div>
   </div>
-  <div id="map"></div>
-  <div id="status">กำลังค้นหาพิกัดโครงการ…</div>
+
+  <div class="chips" id="chips"></div>
+  <div id="list"></div>
+
+  <div class="note">
+    <b>อ่านก่อนใช้</b><br>
+    • ข้อมูลรวบรวมจากประกาศออนไลน์ (Hipflat, Ennxo, ข่าวโครงการ) ราคา/สถานะอาจเปลี่ยนแล้ว — โทรเช็คผู้ขายก่อนเสมอ<br>
+    • หมุดขอบทึบ = พิกัดที่ค้นเจอจาก OpenStreetMap · หมุดขอบเส้นประ = ตำแหน่งประมาณจากชื่อตำบล ให้กด "Google Maps" เช็คตำแหน่งจริง<br>
+    • ทรัพย์ NPA ไม่ระบุทำเล จึงแสดงในรายการแต่ไม่มีหมุด<br>
+    • แผนที่ © OpenStreetMap contributors
+  </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const ME=[12.7948,101.2465];
-// geo: ชื่อค้นหา (Nominatim) ; km/ang: ตำแหน่งประมาณถ้าค้นไม่เจอ
 const ITEMS=[
-{id:1,name:"The Deco หนองละลอก",type:"res",price:"฿2.5 ล้าน",desc:"สร้างเสร็จ 2019 · ลงขาย 1 ยูนิต",geo:["The Deco Nong Lalok","เดอะ เดคโค่ หนองละลอก บ้านค่าย"],km:2,ang:20},
-{id:2,name:"หมู่บ้านปรีชา ไพรเวท",type:"res",price:"฿3.5 ล้าน",desc:"บ้านเดี่ยว 2 ชั้น 4 นอน 4 น้ำ 50 ตร.ว. (อีกยูนิต 2 นอน 38 ตร.ว. ฿1.9 ล้าน)",geo:["ปรีชา ไพรเวท บ้านค่าย ระยอง"],km:12,ang:245},
-{id:4,name:"Supalai Gardenville ระยอง",type:"new",price:"฿2.5–4.12 ล้าน",desc:"โครงการบ้านใหม่ศุภาลัย",geo:["ศุภาลัย การ์เด้นวิลล์ ระยอง","Supalai Gardenville Rayong"],km:12,ang:250},
-{id:5,name:"Supalai Grand Ville ระยอง",type:"new",price:"ไม่พบราคา",desc:"บ้านเดี่ยว Tropical Modern ถนนระยอง–บ้านค่าย",geo:["ศุภาลัย แกรนด์วิลล์ ระยอง","Supalai Grand Ville Rayong"],km:11,ang:240},
-{id:6,name:"Bliss บ้านค่าย (ศุภาลัย)",type:"new",price:"฿1.79 ล้าน",desc:"บ้านเดี่ยว/แฝด/ทาวน์โฮม 213 แปลง",geo:["ศุภาลัย บลิซ ระยอง","Supalai Bliss Rayong"],km:13,ang:250},
-{id:7,name:"Pitta Village บ้านค่าย",type:"new",price:"฿3.99 ล้าน",desc:"บ้านพร้อมอยู่ 3 นอน 50 ตร.ว.",geo:["พิททา วิลเลจ บ้านค่าย","Pitta Village Ban Khai"],km:12,ang:240},
-{id:8,name:"หมู่บ้านพรภิรมย์ มาบข่า",type:"res",price:"฿2.7 ล้าน",desc:"บ้านเดี่ยว 2 นอน 130 ตร.ม.",geo:["หมู่บ้านพรภิรมย์ มาบข่า","Phonphirom Village Map Kha"],km:17,ang:175}
+{id:1,name:"The Deco หนองละลอก",type:"res",price:"฿2.5 ล้าน",pv:2.5,area:"ต.หนองละลอก อ.บ้านค่าย",specs:["สร้างเสร็จ 2019","1 ยูนิตในประกาศ"],desc:"ราคาเฉลี่ยในโครงการ ~฿10,245/ตร.ม. ต่ำกว่าค่าเฉลี่ยอำเภอบ้านค่ายมาก — ใกล้ที่ทำงานที่สุด",geo:["The Deco Nong Lalok","เดอะ เดคโค่ หนองละลอก"],km:2,ang:20,src:"https://www.hipflat.co.th/projects/-91th0lht1007002uh731480etta8et70"},
+{id:2,name:"หมู่บ้านปรีชา ไพรเวท (BHL1361)",type:"res",price:"฿3.5 ล้าน",pv:3.5,area:"อ.บ้านค่าย",specs:["บ้านเดี่ยว 2 ชั้น","4 นอน","4 น้ำ","50 ตร.ว."],desc:"~฿58,000/ตร.ว. · ไม่ระบุสภาพบ้าน",geo:["ปรีชา ไพรเวท บ้านค่าย","Preecha Private Ban Khai"],km:12,ang:245,src:"https://www.ennxo.com/product/458846"},
+{id:3,name:"บ้านเดี่ยวในโครงการ (ไม่ระบุชื่อ)",type:"res",price:"฿1.9 ล้าน",pv:1.9,area:"อ.บ้านค่าย",specs:["บ้านเดี่ยว","2 นอน","2 น้ำ","38 ตร.ว."],desc:"~฿50,000/ตร.ว. · ราคาถูกสุดในกลุ่มบ้านเดี่ยว ต้องถามชื่อโครงการกับผู้ขาย",geo:[],km:12,ang:232,src:"https://www.ennxo.com/product/458846"},
+{id:4,name:"Supalai Gardenville ระยอง",type:"new",price:"฿2.5–4.12 ล้าน",pv:2.5,area:"อ.บ้านค่าย",specs:["บ้านใหม่","6 ยูนิตในประกาศ","ค่าเช่า ฿25–28k"],desc:"โครงการของศุภาลัย มีหลายแบบบ้านให้เลือก",geo:["ศุภาลัย การ์เด้นวิลล์ ระยอง","Supalai Gardenville Rayong"],km:12,ang:252,src:"https://www.hipflat.co.th/projects/soi-mu-ban-rayong-river-park-2h7107a1197299h90t20t4aa9l0l229t"},
+{id:5,name:"Supalai Grand Ville ระยอง",type:"new",price:"สอบถามโครงการ",pv:99,area:"ถนนระยอง–บ้านค่าย",specs:["บ้านเดี่ยวหรู","Tropical Modern"],desc:"โครงการใหญ่ มูลค่ารวม 2,170 ล้านบาท — ไม่พบราคาต่อหลังในแหล่งข้อมูล",geo:["ศุภาลัย แกรนด์วิลล์ ระยอง","Supalai Grand Ville Rayong"],km:11,ang:240,src:"https://www.mitihoon.com/2024/05/24/460064/"},
+{id:6,name:"Bliss บ้านค่าย (ศุภาลัย)",type:"new",price:"฿1.79 ล้าน",pv:1.79,area:"อ.บ้านค่าย",specs:["บ้านเดี่ยว/แฝด/ทาวน์โฮม","213 แปลง"],desc:"ราคาเริ่มต้นถูกที่สุดในกลุ่มบ้านใหม่",geo:["ศุภาลัย บลิซ ระยอง","Supalai Bliss Rayong"],km:13,ang:250,src:"https://www.hipflat.co.th/projects/bliss-baankhai-rayong-4120lt1312tahn4n0l9e9ha1ttn7uhnh"},
+{id:7,name:"Pitta Village บ้านค่าย",type:"new",price:"฿3.99 ล้าน",pv:3.99,area:"อ.บ้านค่าย",specs:["พร้อมอยู่","3 นอน","~200 ตร.ม.","50 ตร.ว."],desc:"~฿19,950/ตร.ม. · ตกแต่งบางส่วน",geo:["พิททา วิลเลจ บ้านค่าย","Pitta Village Ban Khai"],km:12,ang:238,src:"https://www.hipflat.co.th/ads/31a0lnc483128chc214hu3223u022a99"},
+{id:8,name:"หมู่บ้านพรภิรมย์ มาบข่า",type:"res",price:"฿2.7 ล้าน",pv:2.7,area:"ต.มาบข่า อ.นิคมพัฒนา",specs:["บ้านเดี่ยว","2 นอน","130 ตร.ม.","มี รปภ."],desc:"~฿20,769/ตร.ม. · ใกล้ รพ.ปิยะเวชช์ นิคมพัฒนา · อาจอยู่ขอบรัศมี",geo:["หมู่บ้านพรภิรมย์ มาบข่า","Phonphirom Village Map Kha"],km:17,ang:175,src:"https://www.hipflat.co.th/ads/aec141ec8aa271ul11h0lc173u07n2ah"},
+{id:9,name:"ที่ดินพร้อมบ้าน 2 ชั้น ติดถนนหลัก",type:"res",price:"฿12 ล้าน",pv:12,area:"ต.หนองบัว อ.บ้านค่าย",specs:["ครึ่งปูนครึ่งไม้","2 นอน","29 ตร.ว."],desc:"ราคาสูงเพราะทำเลติดถนนหลัก เหมาะทำการค้ามากกว่าอยู่อาศัย",geo:[],km:null,src:"https://www.ennxo.com/house/for-sale/area/amphoe-ban-khai"},
+{id:10,name:"NPA ธนาคาร – ระยอง 4 หลัง",type:"npa",price:"฿1.05–3.36 ล้าน",pv:1.05,area:"จ.ระยอง (ไม่ระบุทำเล)",specs:["โปรฯ มิ.ย. 69"],desc:"บ้านเดี่ยว 54 ตร.ว. 2.2→1.15 ล้าน · ทาวน์โฮม 20 ตร.ว. 1.65→1.05 ล้าน · ทาวน์โฮม 20 ตร.ว. 2.53→1.68 ล้าน · บ้านเดี่ยว 408 ตร.ว. 4.18→3.36 ล้าน (โปรอาจหมดแล้ว)",geo:[],km:null,src:"https://www.mitihoon.com/2026/06/09/648334/"},
+{id:11,name:"ทรัพย์ธนาคารกรุงเทพ ภาคตะวันออก",type:"npa",price:"ดูแคตตาล็อก",pv:98,area:"จ.ระยอง",specs:["ส.ค. 69–ม.ค. 70"],desc:"แคตตาล็อกลดราคาพิเศษ · สอบถามสำนักธุรกิจระยอง 0 3886 1025-7 ต่อ 2603",geo:[],km:null,src:"https://www.bangkokbank.com/-/media/files/personal/my-home/bank-properties-for-sales/2026/properties-in-eastern-2.pdf"}
 ];
-const COL={new:"#0f766e",res:"#b45309"};
-const LBL={new:"โครงการใหม่ (มือ 1)",res:"มือสอง"};
+const LBL={new:"มือ 1 · โครงการใหม่",res:"มือสอง",npa:"ทรัพย์ธนาคาร NPA"};
+const HEX={new:"#0f766e",res:"#b45309",npa:"#7c3aed"};
+let filter="all",sort="near",sel=null;
+const POS={};   // id -> {ll,exact,d}
 
-const map=L.map("map").setView(ME,11);
-L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap contributors"}).addTo(map);
+/* ---------- map ---------- */
+const map=L.map("map",{zoomControl:true}).setView([12.74,101.18],11);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(map);
 L.circle(ME,{radius:20000,color:"#1d4ed8",weight:2,fillOpacity:.04}).addTo(map);
-L.circle(ME,{radius:10000,color:"#1d4ed8",weight:1,dashArray:"4 4",fill:false}).addTo(map);
-L.marker(ME).addTo(map).bindPopup("จุดอ้างอิง: นิคมหนองละลอก");
-
-const markers={};
-function offset(km,ang){const a=ang*Math.PI/180;return [ME[0]+(km*Math.cos(a))/111, ME[1]+(km*Math.sin(a))/(111*Math.cos(ME[0]*Math.PI/180))]}
-function dist(a,b){const R=6371,t=x=>x*Math.PI/180,dl=t(b[0]-a[0]),dn=t(b[1]-a[1]);const h=Math.sin(dl/2)**2+Math.cos(t(a[0]))*Math.cos(t(b[0]))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))}
-function put(it,ll,exact){
-  const d=dist(ME,ll).toFixed(1);
-  const icon=L.divIcon({className:"",html:`<div class="pin ${exact?"":"approx"}" style="background:${COL[it.type]}">${it.id}</div>`,iconSize:[26,26],iconAnchor:[13,13]});
-  const m=L.marker(ll,{icon}).addTo(map);
-  m.bindPopup(`<div class="pop"><b>${it.name}</b><div>${LBL[it.type]} · ${it.price}</div><div>${it.desc}</div><div>ห่าง ~${d} กม. ${exact?"":"(ตำแหน่งประมาณ — ค้นพิกัดจริงไม่พบ)"}</div><div style="margin-top:6px"><a target="_blank" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(it.geo[0])}">Google Maps</a><a target="_blank" href="https://www.google.com/maps/dir/?api=1&destination=${ll[0]},${ll[1]}">นำทาง</a></div></div>`);
-  markers[it.id]={m,type:it.type};
+L.circle(ME,{radius:10000,color:"#1d4ed8",weight:1,dashArray:"5 5",fill:false}).addTo(map);
+L.marker(ME,{icon:L.divIcon({className:"",html:'<div class="me"></div>',iconSize:[16,16],iconAnchor:[8,8]})}).addTo(map).bindPopup("<b>นิคมหนองละลอก</b><br>จุดอ้างอิง");
+const MK={};
+function offset(km,ang){const a=ang*Math.PI/180;return [ME[0]+km*Math.cos(a)/111,ME[1]+km*Math.sin(a)/(111*Math.cos(ME[0]*Math.PI/180))]}
+function dist(a,b){const t=x=>x*Math.PI/180,dl=t(b[0]-a[0]),dn=t(b[1]-a[1]);const h=Math.sin(dl/2)**2+Math.cos(t(a[0]))*Math.cos(t(b[0]))*Math.sin(dn/2)**2;return 12742*Math.asin(Math.sqrt(h))}
+function pinIcon(it){const p=POS[it.id];return L.divIcon({className:"",html:`<div class="pin ${p.exact?"":"approx"} ${sel===it.id?"sel":""}" style="background:${HEX[it.type]}">${it.id}</div>`,iconSize:[28,28],iconAnchor:[14,14]})}
+function place(it,ll,exact){
+  POS[it.id]={ll,exact,d:dist(ME,ll)};
+  if(MK[it.id]) map.removeLayer(MK[it.id]);
+  const m=L.marker(ll,{icon:pinIcon(it)}).addTo(map);
+  m.bindPopup(`<div class="pop"><b>${it.name}</b><div>${it.price} · ${LBL[it.type]}</div><div>ห่าง ~${POS[it.id].d.toFixed(1)} กม.${exact?"":" (ประมาณ)"}</div></div>`);
+  m.on("click",()=>pick(it.id,false));
+  MK[it.id]=m;
 }
+ITEMS.filter(i=>i.km!=null).forEach(i=>place(i,offset(i.km,i.ang),false));
+
+/* ---------- geocode (Nominatim, cached) ---------- */
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function geocode(q){
-  const key="geo:"+q;
-  try{const c=localStorage.getItem(key);if(c)return JSON.parse(c)}catch(e){}
-  const u="https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=th&viewbox=100.9,13.0,101.6,12.5&bounded=1&accept-language=th&q="+encodeURIComponent(q);
+  const k="geo2:"+q;
+  try{const c=localStorage.getItem(k);if(c)return {ll:JSON.parse(c),cached:true}}catch(e){}
   try{
-    const r=await fetch(u);const j=await r.json();
-    if(j[0]){const ll=[+j[0].lat,+j[0].lon];try{localStorage.setItem(key,JSON.stringify(ll))}catch(e){}return ll}
-  }catch(e){}
-  return null;
+    const r=await fetch("https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=th&viewbox=100.9,13.0,101.6,12.5&bounded=1&accept-language=th&q="+encodeURIComponent(q));
+    const j=await r.json();
+    const ll=j[0]?[+j[0].lat,+j[0].lon]:null;
+    try{localStorage.setItem(k,JSON.stringify(ll))}catch(e){}
+    return {ll,cached:false};
+  }catch(e){return {ll:null,cached:false}}
 }
 (async()=>{
-  let ok=0;
-  for(const it of ITEMS){
-    let ll=null;
-    for(const q of it.geo){ll=await geocode(q);await sleep(1100);if(ll)break}
-    if(ll&&dist(ME,ll)<=30){put(it,ll,true);ok++}else put(it,offset(it.km,it.ang),false);
+  let ok=0;const geoItems=ITEMS.filter(i=>i.geo.length&&i.km!=null);
+  for(const it of geoItems){
+    for(const q of it.geo){
+      const {ll,cached}=await geocode(q);
+      if(!cached) await sleep(1100);
+      if(ll&&dist(ME,ll)<=30){place(it,ll,true);ok++;break}
+    }
   }
-  document.getElementById("status").textContent=`พิกัดจริง ${ok}/${ITEMS.length} โครงการ · หมุดเส้นประ = ตำแหน่งประมาณ · ราคาจากหน้าประกาศ อาจเปลี่ยนแล้ว`;
+  document.getElementById("geostat").textContent=`พิกัดจริง ${ok}/${geoItems.length}`;
+  drawList();
 })();
 
-document.querySelectorAll(".chip[data-f]").forEach(b=>b.onclick=()=>{
-  document.querySelectorAll(".chip[data-f]").forEach(x=>x.classList.toggle("on",x===b));
-  const f=b.dataset.f;
-  Object.values(markers).forEach(o=>{const show=f==="all"||o.type===f;show?o.m.addTo(map):map.removeLayer(o.m)});
-});
+/* ---------- UI ---------- */
+function count(t){return ITEMS.filter(i=>t==="all"||i.type===t).length}
+function drawStats(){
+  document.getElementById("stats").innerHTML=
+   ["new","res","npa"].map(t=>`<div class="stat ${t}"><div class="n">${count(t)}</div><div class="l">${LBL[t]}</div></div>`).join("");
+}
+function drawChips(){
+  const o=[["all","ทั้งหมด"],["new","มือ 1"],["res","มือสอง"],["npa","NPA"]];
+  document.getElementById("chips").innerHTML=o.map(x=>`<button class="chip ${filter===x[0]?"on":""}" data-f="${x[0]}">${x[1]}<span class="c">${count(x[0])}</span></button>`).join("")+
+   `<select class="chip" id="sort"><option value="near" ${sort==="near"?"selected":""}>เรียง: ใกล้สุด</option><option value="cheap" ${sort==="cheap"?"selected":""}>เรียง: ถูกสุด</option></select>`;
+  document.querySelectorAll(".chip[data-f]").forEach(b=>b.onclick=()=>{filter=b.dataset.f;sel=null;render()});
+  document.getElementById("sort").onchange=e=>{sort=e.target.value;drawList()};
+}
+function drawList(){
+  let rows=ITEMS.filter(i=>filter==="all"||i.type===filter);
+  rows.sort(sort==="cheap"?(a,b)=>a.pv-b.pv:(a,b)=>(POS[a.id]?.d??999)-(POS[b.id]?.d??999));
+  document.getElementById("list").innerHTML=rows.map(i=>{
+    const p=POS[i.id];
+    const q=i.geo[0]||i.area;
+    return `<div class="card ${sel===i.id?"hl":""}" id="c${i.id}" data-id="${i.id}">
+      <div class="top"><div><span class="num b-${i.type}">${i.id}</span><span class="name">${i.name}</span></div><div class="price">${i.price}</div></div>
+      <div class="meta"><span class="tag t-${i.type}">${LBL[i.type]}</span>${i.area}${p?` · ห่าง ~${p.d.toFixed(1)} กม.${p.exact?"":' <span class="approx">(ประมาณ)</span>'}`:""}</div>
+      <div class="specs">${i.specs.map(s=>`<span class="spec">${s}</span>`).join("")}</div>
+      <div class="desc">${i.desc}</div>
+      <div class="links">
+        ${i.type!=="npa"?`<a target="_blank" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q+" ระยอง")}">🗺️ Google Maps</a>`:""}
+        ${p?`<a target="_blank" href="https://www.google.com/maps/dir/?api=1&origin=${ME[0]},${ME[1]}&destination=${p.ll[0]},${p.ll[1]}">🚗 นำทาง</a>`:""}
+        <a target="_blank" href="${i.src}">🔗 ประกาศต้นทาง</a>
+      </div></div>`}).join("");
+  document.querySelectorAll(".card").forEach(c=>c.onclick=e=>{if(e.target.closest("a"))return;pick(+c.dataset.id,true)});
+}
+function drawPins(){
+  ITEMS.forEach(i=>{const m=MK[i.id];if(!m)return;const show=filter==="all"||i.type===filter;
+    if(show){m.addTo(map);m.setIcon(pinIcon(i))}else map.removeLayer(m)});
+}
+function pick(id,fromList){
+  sel=id;drawPins();drawList();
+  const p=POS[id];
+  if(p&&fromList){map.flyTo(p.ll,14,{duration:.8});MK[id].openPopup();document.getElementById("map").scrollIntoView({behavior:"smooth",block:"center"})}
+  if(!fromList){const c=document.getElementById("c"+id);c&&c.scrollIntoView({behavior:"smooth",block:"center"})}
+}
+function render(){drawStats();drawChips();drawList();drawPins()}
+render();
+
 document.getElementById("loc").onclick=()=>{
-  navigator.geolocation&&navigator.geolocation.getCurrentPosition(p=>{
+  if(!navigator.geolocation)return;
+  navigator.geolocation.getCurrentPosition(p=>{
     const ll=[p.coords.latitude,p.coords.longitude];
-    L.circleMarker(ll,{radius:8,color:"#fff",weight:2,fillColor:"#2563eb",fillOpacity:1}).addTo(map).bindPopup("คุณอยู่ที่นี่");
-    map.setView(ll,13);
-  });
+    L.circleMarker(ll,{radius:8,color:"#fff",weight:3,fillColor:"#ef4444",fillOpacity:1}).addTo(map).bindPopup("คุณอยู่ที่นี่").openPopup();
+    map.flyTo(ll,13);
+  },()=>{document.getElementById("geostat").textContent="เปิดตำแหน่งไม่ได้ (ตรวจสิทธิ์ location)"});
 };
 </script>
 </body>
