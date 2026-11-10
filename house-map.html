@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>บ้านขายรอบหนองละลอก รัศมี 20 กม. (แผนที่)</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+html,body{margin:0;height:100%;font-family:system-ui,-apple-system,"Noto Sans Thai",sans-serif}
+#app{display:flex;flex-direction:column;height:100%}
+#bar{padding:8px 10px;background:#fff;border-bottom:1px solid #ddd;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+#bar b{font-size:14px;margin-right:6px}
+.chip{border:1px solid #ccc;background:#fff;border-radius:999px;padding:5px 12px;font-size:13px;cursor:pointer}
+.chip.on{background:#222;color:#fff;border-color:#222}
+#map{flex:1}
+#status{font-size:11px;color:#666;padding:4px 10px;background:#fafafa;border-top:1px solid #eee}
+.pin{border-radius:50%;color:#fff;font-weight:700;font-size:12px;width:26px;height:26px;line-height:26px;text-align:center;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.pin.approx{border-style:dashed;opacity:.85}
+.pop b{font-size:14px}.pop div{font-size:12px;margin-top:3px}
+.pop a{font-size:12px;margin-right:10px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="bar"><b>บ้านขายรอบหนองละลอก</b>
+    <button class="chip on" data-f="all">ทั้งหมด</button>
+    <button class="chip" data-f="new">มือ 1</button>
+    <button class="chip" data-f="res">มือสอง</button>
+    <button class="chip" id="loc">📍 ตำแหน่งฉัน</button>
+  </div>
+  <div id="map"></div>
+  <div id="status">กำลังค้นหาพิกัดโครงการ…</div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const ME=[12.7948,101.2465];
+// geo: ชื่อค้นหา (Nominatim) ; km/ang: ตำแหน่งประมาณถ้าค้นไม่เจอ
+const ITEMS=[
+{id:1,name:"The Deco หนองละลอก",type:"res",price:"฿2.5 ล้าน",desc:"สร้างเสร็จ 2019 · ลงขาย 1 ยูนิต",geo:["The Deco Nong Lalok","เดอะ เดคโค่ หนองละลอก บ้านค่าย"],km:2,ang:20},
+{id:2,name:"หมู่บ้านปรีชา ไพรเวท",type:"res",price:"฿3.5 ล้าน",desc:"บ้านเดี่ยว 2 ชั้น 4 นอน 4 น้ำ 50 ตร.ว. (อีกยูนิต 2 นอน 38 ตร.ว. ฿1.9 ล้าน)",geo:["ปรีชา ไพรเวท บ้านค่าย ระยอง"],km:12,ang:245},
+{id:4,name:"Supalai Gardenville ระยอง",type:"new",price:"฿2.5–4.12 ล้าน",desc:"โครงการบ้านใหม่ศุภาลัย",geo:["ศุภาลัย การ์เด้นวิลล์ ระยอง","Supalai Gardenville Rayong"],km:12,ang:250},
+{id:5,name:"Supalai Grand Ville ระยอง",type:"new",price:"ไม่พบราคา",desc:"บ้านเดี่ยว Tropical Modern ถนนระยอง–บ้านค่าย",geo:["ศุภาลัย แกรนด์วิลล์ ระยอง","Supalai Grand Ville Rayong"],km:11,ang:240},
+{id:6,name:"Bliss บ้านค่าย (ศุภาลัย)",type:"new",price:"฿1.79 ล้าน",desc:"บ้านเดี่ยว/แฝด/ทาวน์โฮม 213 แปลง",geo:["ศุภาลัย บลิซ ระยอง","Supalai Bliss Rayong"],km:13,ang:250},
+{id:7,name:"Pitta Village บ้านค่าย",type:"new",price:"฿3.99 ล้าน",desc:"บ้านพร้อมอยู่ 3 นอน 50 ตร.ว.",geo:["พิททา วิลเลจ บ้านค่าย","Pitta Village Ban Khai"],km:12,ang:240},
+{id:8,name:"หมู่บ้านพรภิรมย์ มาบข่า",type:"res",price:"฿2.7 ล้าน",desc:"บ้านเดี่ยว 2 นอน 130 ตร.ม.",geo:["หมู่บ้านพรภิรมย์ มาบข่า","Phonphirom Village Map Kha"],km:17,ang:175}
+];
+const COL={new:"#0f766e",res:"#b45309"};
+const LBL={new:"โครงการใหม่ (มือ 1)",res:"มือสอง"};
+
+const map=L.map("map").setView(ME,11);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap contributors"}).addTo(map);
+L.circle(ME,{radius:20000,color:"#1d4ed8",weight:2,fillOpacity:.04}).addTo(map);
+L.circle(ME,{radius:10000,color:"#1d4ed8",weight:1,dashArray:"4 4",fill:false}).addTo(map);
+L.marker(ME).addTo(map).bindPopup("จุดอ้างอิง: นิคมหนองละลอก");
+
+const markers={};
+function offset(km,ang){const a=ang*Math.PI/180;return [ME[0]+(km*Math.cos(a))/111, ME[1]+(km*Math.sin(a))/(111*Math.cos(ME[0]*Math.PI/180))]}
+function dist(a,b){const R=6371,t=x=>x*Math.PI/180,dl=t(b[0]-a[0]),dn=t(b[1]-a[1]);const h=Math.sin(dl/2)**2+Math.cos(t(a[0]))*Math.cos(t(b[0]))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))}
+function put(it,ll,exact){
+  const d=dist(ME,ll).toFixed(1);
+  const icon=L.divIcon({className:"",html:`<div class="pin ${exact?"":"approx"}" style="background:${COL[it.type]}">${it.id}</div>`,iconSize:[26,26],iconAnchor:[13,13]});
+  const m=L.marker(ll,{icon}).addTo(map);
+  m.bindPopup(`<div class="pop"><b>${it.name}</b><div>${LBL[it.type]} · ${it.price}</div><div>${it.desc}</div><div>ห่าง ~${d} กม. ${exact?"":"(ตำแหน่งประมาณ — ค้นพิกัดจริงไม่พบ)"}</div><div style="margin-top:6px"><a target="_blank" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(it.geo[0])}">Google Maps</a><a target="_blank" href="https://www.google.com/maps/dir/?api=1&destination=${ll[0]},${ll[1]}">นำทาง</a></div></div>`);
+  markers[it.id]={m,type:it.type};
+}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function geocode(q){
+  const key="geo:"+q;
+  try{const c=localStorage.getItem(key);if(c)return JSON.parse(c)}catch(e){}
+  const u="https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=th&viewbox=100.9,13.0,101.6,12.5&bounded=1&accept-language=th&q="+encodeURIComponent(q);
+  try{
+    const r=await fetch(u);const j=await r.json();
+    if(j[0]){const ll=[+j[0].lat,+j[0].lon];try{localStorage.setItem(key,JSON.stringify(ll))}catch(e){}return ll}
+  }catch(e){}
+  return null;
+}
+(async()=>{
+  let ok=0;
+  for(const it of ITEMS){
+    let ll=null;
+    for(const q of it.geo){ll=await geocode(q);await sleep(1100);if(ll)break}
+    if(ll&&dist(ME,ll)<=30){put(it,ll,true);ok++}else put(it,offset(it.km,it.ang),false);
+  }
+  document.getElementById("status").textContent=`พิกัดจริง ${ok}/${ITEMS.length} โครงการ · หมุดเส้นประ = ตำแหน่งประมาณ · ราคาจากหน้าประกาศ อาจเปลี่ยนแล้ว`;
+})();
+
+document.querySelectorAll(".chip[data-f]").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".chip[data-f]").forEach(x=>x.classList.toggle("on",x===b));
+  const f=b.dataset.f;
+  Object.values(markers).forEach(o=>{const show=f==="all"||o.type===f;show?o.m.addTo(map):map.removeLayer(o.m)});
+});
+document.getElementById("loc").onclick=()=>{
+  navigator.geolocation&&navigator.geolocation.getCurrentPosition(p=>{
+    const ll=[p.coords.latitude,p.coords.longitude];
+    L.circleMarker(ll,{radius:8,color:"#fff",weight:2,fillColor:"#2563eb",fillOpacity:1}).addTo(map).bindPopup("คุณอยู่ที่นี่");
+    map.setView(ll,13);
+  });
+};
+</script>
+</body>
+</html>
