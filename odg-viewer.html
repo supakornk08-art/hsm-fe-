@@ -34,7 +34,7 @@ main{display:flex;min-height:0}
 .sig .sw input{position:absolute;inset:-6px;opacity:0;cursor:pointer}
 .sig .nm{font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sig .cm{color:var(--dim);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#plotWrap{flex:1;display:grid;grid-template-rows:28px 1fr 46px;min-width:0;min-height:0;position:relative}
+#plotWrap{flex:1;display:grid;grid-template-rows:48px 1fr 46px;min-width:0;min-height:0;position:relative}
 #axis,#ov{display:block;width:100%;height:100%}
 #scroll{overflow-y:auto;overflow-x:hidden;min-height:0;position:relative}
 #plot{display:block;width:100%;touch-action:pan-y;cursor:crosshair}
@@ -488,8 +488,24 @@ function drawAxis(tk){
   g.fillStyle='#9aa5b3';g.font='11px Consolas,monospace';
   g.fillText(fmtDate(view[0]),8,12);g.fillStyle='#6d7886';g.fillText((tk.st>=1000?(tk.st/1000)+' s':tk.st+' ms')+'/div',8,24);
   g.fillStyle='#b8c2ce';g.textAlign='center';
-  for(const t of tk.out){const x=X(t);if(x<LABEL_W+30||x>W-30)continue;g.fillText(fmtTime(t,tk.st<1000),x,17);g.fillRect(x,H-5,1,5);}
+  for(const t of tk.out){const x=X(t);if(x<LABEL_W+30||x>W-30)continue;g.fillText(fmtTime(t,tk.st<1000),x,13);g.fillRect(x,16,1,4);}
   g.textAlign='left';
+  // cursor time indicators + ΔT
+  const PL=LABEL_W,PR=W-1;g.font='bold 11px Consolas,monospace';
+  const cs=[[curA,'A',getCss('--A')],[curB,'B',getCss('--B')]].filter(c=>c[0]!=null);
+  const pos=c=>{const x=X(c[0]);return x<PL?{x:PL,off:-1}:x>PR?{x:PR,off:1}:{x,off:0};};
+  cs.sort((a,b)=>a[0]-b[0]);
+  cs.forEach((c,i)=>{const p=pos(c);let txt=c[1]+' '+fmtTime(c[0]);if(p.off<0)txt='◀ '+txt;if(p.off>0)txt=txt+' ▶';
+    const w=g.measureText(txt).width+10;let bx=cs.length===2?(i===0?p.x-w+1:p.x):p.x-w/2;bx=Math.max(PL,Math.min(PR-w,bx));
+    g.fillStyle=c[2];g.fillRect(bx,20,w,14);g.fillStyle='#fff';g.fillText(txt,bx+5,31);
+    if(!p.off){g.fillRect(Math.round(p.x),20,1,H-20);}});
+  if(cs.length===2){
+    const a=pos(cs[0]).x,b=pos(cs[1]).x,y=41,col='#2bd47a';
+    g.strokeStyle=col;g.fillStyle=col;g.lineWidth=1.5;g.beginPath();g.moveTo(a,y);g.lineTo(b,y);g.stroke();g.lineWidth=1;
+    if(b-a>12){g.beginPath();g.moveTo(a,y);g.lineTo(a+6,y-4);g.lineTo(a+6,y+4);g.closePath();g.moveTo(b,y);g.lineTo(b-6,y-4);g.lineTo(b-6,y+4);g.closePath();g.fill();}
+    const txt='ΔT '+fmtDur(cs[1][0]-cs[0][0]);const w=g.measureText(txt).width+10;let bx=Math.max(PL,Math.min(PR-w,(a+b)/2-w/2));
+    g.fillStyle='#0b2a1a';g.fillRect(bx,35,w,13);g.strokeStyle=col;g.strokeRect(bx+.5,35.5,w-1,12);g.fillStyle=col;g.fillText(txt,bx+5,45);
+  }
 }
 let ovCache=null;
 function drawOverview(){
