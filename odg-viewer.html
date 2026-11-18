@@ -28,7 +28,11 @@ main{display:flex;min-height:0}
 #side .tools{display:flex;gap:4px;padding:6px;border-bottom:1px solid var(--line)}
 #side input[type=search]{flex:1;min-width:0;background:#0f1216;border:1px solid #333b47;border-radius:6px;padding:4px 7px}
 #sigList{overflow:auto;flex:1;padding:2px 0}
-.sig{display:grid;grid-template-columns:18px 14px 1fr;gap:6px;align-items:center;padding:3px 8px;cursor:pointer}
+.sig{display:grid;grid-template-columns:16px 18px 14px 1fr;gap:6px;align-items:center;padding:3px 8px 3px 4px;cursor:pointer}
+.sig .hd{color:#5d6773;cursor:grab;touch-action:none;font-size:15px;text-align:center;user-select:none}
+.sig .hd:hover{color:var(--txt)}
+.sig.dragging{background:#1d3a57;outline:1px solid var(--acc);position:relative;z-index:2}
+.filtering .sig .hd{visibility:hidden}
 .sig:hover{background:#1c222b}
 .sig .sw{width:12px;height:12px;border-radius:3px;border:1px solid #0006;position:relative;overflow:hidden}
 .sig .sw input{position:absolute;inset:-6px;opacity:0;cursor:pointer}
@@ -82,7 +86,7 @@ kbd{background:#252b35;border:1px solid #3a4350;border-radius:4px;padding:0 4px;
 </header>
 <main>
   <aside id="side">
-    <div class="tools"><input type="search" id="q" placeholder="ค้นหาชื่อ / comment"><button class="btn" id="bAll" title="เลือกทั้งหมด">✓</button><button class="btn" id="bNone" title="ไม่เลือก">✕</button></div>
+    <div class="tools"><input type="search" id="q" placeholder="ค้นหาชื่อ / comment"><button class="btn" id="bAll" title="เลือกทั้งหมด">✓</button><button class="btn" id="bNone" title="ไม่เลือก">✕</button><button class="btn" id="bReset" title="คืนลำดับ/สี/การเลือก ตามที่ตั้งใน ODG">↺</button></div>
     <div id="sigList"></div>
   </aside>
   <section id="plotWrap">
@@ -106,7 +110,9 @@ kbd{background:#252b35;border:1px solid #3a4350;border-radius:4px;padding:0 4px;
     <li><b>คลิก</b> = วางเคอร์เซอร์ A · <b>คลิกขวา</b> = เคอร์เซอร์ B (มือถือใช้ปุ่ม “เคอร์เซอร์ A/B” สลับ)</li>
     <li><b>มือถือ:</b> ปัดขึ้น/ลง = เลื่อนรายการ · ปัดซ้าย/ขวา = เลื่อนเวลา · ถ่างสองนิ้ว = ซูม · แตะ = วางเคอร์เซอร์</li>
     <li>แถบล่างสุด (overview) คลิก/ลาก เพื่อเลือกช่วงเวลา</li>
-    <li>คลิกช่องสีในรายการสัญญาณ = เปลี่ยนสีเส้น</li>
+    <li><b>จัดลำดับ:</b> ลากที่ ⠿ ในรายการสัญญาณ หรือลากชื่อบนกราฟ (เมาส์)</li>
+    <li><b>เปลี่ยนสี:</b> คลิกช่องสีในรายการ หรือดับเบิลคลิกชื่อบนกราฟ</li>
+    <li>ลำดับ/สี/การเลือก จำไว้ให้อัตโนมัติ (ตามชื่อกลุ่ม ODG) · ปุ่ม ↺ = คืนค่าตาม ODG</li>
     <li><kbd>←</kbd><kbd>→</kbd> เลื่อน · <kbd>+</kbd><kbd>−</kbd> ซูม · <kbd>Home</kbd> ทั้งหมด · <kbd>Backspace</kbd> ย้อน</li>
     <li>CSV จะส่งออกเฉพาะสัญญาณที่เลือกในช่วงที่กำลังดู (ค่าแบบ sample &amp; hold)</li>
   </ul>
@@ -460,6 +466,9 @@ function draw(){
   }
   if(hover!=null&&!drag){const x=Math.round(X(hover))+.5;g.strokeStyle='#ffffff40';g.beginPath();g.moveTo(x,0);g.lineTo(x,total);g.stroke();}
   if(drag&&drag.mode==='zoom'){const a=Math.min(drag.x0,drag.x1),b=Math.max(drag.x0,drag.x1);g.fillStyle='#3fa7ff26';g.fillRect(a,0,b-a,total);g.strokeStyle='#3fa7ff';g.strokeRect(a+.5,.5,b-a,total-1);}
+  if(drag&&drag.mode==='reorder'){const S=shown();const k=insertIdx(drag.y);const yy=k<S.length?S[k]._y:total;const s0=drag.s;
+    g.fillStyle='#3fa7ff22';g.fillRect(0,s0._y,W,s0._h);g.fillStyle='#3fa7ff';g.fillRect(0,yy-1.5,W,3);
+    g.font='600 12px Segoe UI,Tahoma,sans-serif';const tw=g.measureText(s0.name).width+12;g.fillStyle='#1d3a57';g.fillRect(8,drag.y-10,tw,20);g.fillStyle=s0.color;g.fillText(s0.name,14,drag.y+4);}
   drawAxis(tk);drawOverview();status();
 }
 function getCss(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
@@ -541,20 +550,41 @@ function pan(fr){const s=view[1]-view[0];setView(view[0]+s*fr,view[1]+s*fr);}
 
 // ---------- signal list ----------
 function renderList(){
-  const q=$('q').value.trim().toLowerCase();const el=$('sigList');el.innerHTML='';
+  const q=$('q').value.trim().toLowerCase();const el=$('sigList');el.innerHTML='';el.classList.toggle('filtering',!!q);
   for(const s of sigs){
     if(q&&!(s.name+' '+s.comment).toLowerCase().includes(q))continue;
     const r=document.createElement('label');r.className='sig';r.title=s.name+'\n'+s.comment+'\nscan '+s.pitchMs+' ms · '+(s.digital?'BOOL':s.dataType===3?'REAL':'INT');
-    r.innerHTML=`<input type="checkbox" ${s.on?'checked':''}><span class="sw" style="background:${s.color}"><input type="color" value="${s.color}"></span><span><div class="nm" style="color:${s.color}"></div><div class="cm"></div></span>`;
+    r.dataset.id=s.id;
+    r.innerHTML=`<span class="hd" title="ลากเพื่อจัดลำดับ">⠿</span><input type="checkbox" ${s.on?'checked':''}><span class="sw" style="background:${s.color}"><input type="color" value="${s.color}"></span><span><div class="nm" style="color:${s.color}"></div><div class="cm"></div></span>`;
     r.querySelector('.nm').textContent=s.name;r.querySelector('.cm').textContent=s.comment;
-    r.querySelector('input[type=checkbox]').onchange=e=>{s.on=e.target.checked;redraw();};
-    const ci=r.querySelector('input[type=color]');ci.onclick=e=>e.stopPropagation();ci.oninput=e=>{s.color=e.target.value;r.querySelector('.sw').style.background=s.color;r.querySelector('.nm').style.color=s.color;redraw();};
+    r.querySelector('input[type=checkbox]').onchange=e=>{s.on=e.target.checked;saveLayout();redraw();};
+    const ci=r.querySelector('input[type=color]');ci.onclick=e=>e.stopPropagation();ci.oninput=e=>{s.color=e.target.value;r.querySelector('.sw').style.background=s.color;r.querySelector('.nm').style.color=s.color;saveLayout();redraw();};
+    const hd=r.querySelector('.hd');hd.onclick=e=>{e.preventDefault();e.stopPropagation();};hd.onpointerdown=e=>listDragStart(e,r);
     el.appendChild(r);
   }
 }
 $('q').oninput=renderList;
-$('bAll').onclick=()=>{const q=$('q').value.trim().toLowerCase();sigs.forEach(s=>{if(!q||(s.name+' '+s.comment).toLowerCase().includes(q))s.on=true;});renderList();redraw();};
-$('bNone').onclick=()=>{const q=$('q').value.trim().toLowerCase();sigs.forEach(s=>{if(!q||(s.name+' '+s.comment).toLowerCase().includes(q))s.on=false;});renderList();redraw();};
+// ---- reorder in list (mouse + touch) ----
+function listDragStart(e,row){
+  e.preventDefault();const el=$('sigList');const h=window;row.classList.add('dragging');
+  const move=ev=>{const y=ev.clientY;const rows=[...el.children].filter(x=>x!==row);let before=null;
+    for(const x of rows){const b=x.getBoundingClientRect();if(y<b.top+b.height/2){before=x;break;}}
+    if(before!==row.nextSibling)el.insertBefore(row,before);
+    const lb=el.getBoundingClientRect();if(y<lb.top+24)el.scrollTop-=8;else if(y>lb.bottom-24)el.scrollTop+=8;};
+  const up=()=>{h.removeEventListener('pointermove',move);h.removeEventListener('pointerup',up);h.removeEventListener('pointercancel',up);row.classList.remove('dragging');
+    const ids=[...el.children].map(x=>+x.dataset.id);const byId=new Map(sigs.map(s=>[s.id,s]));sigs=ids.map(i=>byId.get(i));saveLayout();redraw();};
+  h.addEventListener('pointermove',move);h.addEventListener('pointerup',up);h.addEventListener('pointercancel',up);
+}
+// ---- remember layout per ODG group ----
+const LKEY=()=>'odg-layout:'+(D&&D.groupName||'');
+function saveLayout(){try{localStorage.setItem(LKEY(),JSON.stringify({order:sigs.map(s=>s.id),color:Object.fromEntries(sigs.map(s=>[s.id,s.color])),on:Object.fromEntries(sigs.map(s=>[s.id,s.on]))}));}catch(e){}}
+function applyLayout(){let L=null;try{L=JSON.parse(localStorage.getItem(LKEY())||'null');}catch(e){}if(!L)return;
+  const pos=new Map(L.order.map((id,i)=>[id,i]));sigs.sort((a,b)=>(pos.has(a.id)?pos.get(a.id):1e6+a.order)-(pos.has(b.id)?pos.get(b.id):1e6+b.order));
+  for(const s of sigs){if(L.color&&L.color[s.id])s.color=L.color[s.id];if(L.on&&s.id in L.on)s.on=L.on[s.id];}}
+$('bReset').onclick=()=>{if(!D||!confirm('คืนลำดับ สี และการเลือกสัญญาณ ตามที่ตั้งไว้ใน ODG?'))return;try{localStorage.removeItem(LKEY());}catch(e){}
+  sigs=D.signals.slice().sort((a,b)=>a.order-b.order);for(const s of sigs){s.color=s.color0;s.on=s.visible;}renderList();redraw();};
+$('bAll').onclick=()=>{const q=$('q').value.trim().toLowerCase();sigs.forEach(s=>{if(!q||(s.name+' '+s.comment).toLowerCase().includes(q))s.on=true;});saveLayout();renderList();redraw();};
+$('bNone').onclick=()=>{const q=$('q').value.trim().toLowerCase();sigs.forEach(s=>{if(!q||(s.name+' '+s.comment).toLowerCase().includes(q))s.on=false;});saveLayout();renderList();redraw();};
 
 // ---------- loading ----------
 async function load(file){
@@ -562,7 +592,7 @@ async function load(file){
   await new Promise(r=>setTimeout(r,30));
   try{
     const buf=new Uint8Array(await file.arrayBuffer());
-    D=OGSF.parseOGSF(buf);sigs=D.signals;sigs.forEach(s=>s.on=s.visible);
+    D=OGSF.parseOGSF(buf);sigs=D.signals.slice();sigs.forEach(s=>{s.on=s.visible;s.color0=s.color;});applyLayout();
     hist=[];view=[0,D.durationMs];curA=null;curB=null;
     $('drop').style.display='none';
     $('info').textContent=file.name+' · '+D.groupName+' · '+fmtDate(0)+' '+fmtTime(0,false)+' – '+fmtTime(D.durationMs,false)+' · '+sigs.length+' สัญญาณ';
@@ -590,13 +620,21 @@ plot.addEventListener('pointerdown',e=>{if(!D||e.button===1)return;const [x]=px(
     if(touches.size===2){const [a,b]=[...touches.values()];const c=(a+b)/2;pinch={d0:Math.max(20,Math.abs(a-b)),tc:T(c),f:(c-LABEL_W)/plotW(),span:view[1]-view[0],pushed:false};drag=null;return;}
     if(touches.size>2)return;
     drag={x0:x,x1:x,btn:0,mode:'click',touch:true,v:view.slice()};return;}
+  if(x<LABEL_W&&e.button===0){const y=px(e,plot)[1];const st=stripAt(y);if(st){plot.setPointerCapture(e.pointerId);drag={mode:'reorder',s:st,y,y0:y};plot.style.cursor='grabbing';}return;}
   plot.setPointerCapture(e.pointerId);drag={x0:Math.max(LABEL_W,x),x1:Math.max(LABEL_W,x),btn:e.button,mode:'click'};});
+function stripAt(y){return shown().find(s=>y>=s._y&&y<s._y+s._h);}
+function insertIdx(y){const S=shown();let k=S.findIndex(s=>y<s._y+s._h/2);return k<0?S.length:k;}
+plot.addEventListener('dblclick',e=>{const [x,y]=px(e,plot);if(x>=LABEL_W)return;const st=stripAt(y);if(!st)return;
+  const ci=document.createElement('input');ci.type='color';ci.value=st.color;ci.style.cssText='position:fixed;left:'+e.clientX+'px;top:'+e.clientY+'px;opacity:0;width:1px;height:1px';document.body.appendChild(ci);
+  ci.oninput=()=>{st.color=ci.value;renderList();redraw();};ci.onchange=()=>{saveLayout();ci.remove();};ci.click();setTimeout(()=>ci.remove(),60000);});
 plot.addEventListener('pointermove',e=>{if(!D)return;const [x]=px(e,plot);
   if(e.pointerType==='touch'){if(touches.has(e.pointerId))touches.set(e.pointerId,x);
     if(pinch&&touches.size===2){const [a,b]=[...touches.values()];const d=Math.max(20,Math.abs(a-b));const span=pinch.span*pinch.d0/d;const s=pinch.tc-pinch.f*span;setView(s,s+span,!pinch.pushed);pinch.pushed=true;return;}
     if(drag&&drag.touch){drag.x1=x;if(drag.mode==='click'&&Math.abs(x-drag.x0)>8){drag.mode='pan';hist.push(view.slice());}
       if(drag.mode==='pan'){const dt=(drag.x0-x)/plotW()*(drag.v[1]-drag.v[0]);setView(drag.v[0]+dt,drag.v[1]+dt,false);}}
     return;}
+  if(drag&&drag.mode==='reorder'){drag.y=px(e,plot)[1];redraw();return;}
+  plot.style.cursor=x<LABEL_W?'grab':'crosshair';
   hover=x>=LABEL_W?T(x):null;
   if(drag){drag.x1=Math.max(LABEL_W,Math.min(x,plot.clientWidth));if(drag.mode==='click'&&Math.abs(drag.x1-drag.x0)>6&&drag.btn===0)drag.mode='zoom';}
   redraw();});
@@ -605,6 +643,8 @@ const touchEnd=e=>{touches.delete(e.pointerId);if(touches.size<2)pinch=null;if(e
 plot.addEventListener('pointercancel',touchEnd);
 plot.addEventListener('pointerup',e=>{const wasPinch=!!pinch;if(e.pointerType==='touch')touchEnd(e);if(!drag||wasPinch){if(wasPinch)drag=null;return;}const d=drag;drag=null;
   if(d.mode==='pan')return;
+  if(d.mode==='reorder'){plot.style.cursor='grab';if(Math.abs(d.y-d.y0)<4){redraw();return;}const S=shown();const k=insertIdx(d.y);const tgt=S[k];
+    if(tgt!==d.s){sigs.splice(sigs.indexOf(d.s),1);if(tgt)sigs.splice(sigs.indexOf(tgt),0,d.s);else sigs.splice(sigs.indexOf(S[S.length-1])+1,0,d.s);saveLayout();renderList();}redraw();return;}
   if(d.mode==='zoom'){const a=T(Math.min(d.x0,d.x1)),b=T(Math.max(d.x0,d.x1));setView(a,b);}
   else if(d.x0>LABEL_W){const t=T(d.x0);if(d.btn===2||e.shiftKey||curSel==='B')curB=t;else curA=t;redraw();}
   else redraw();});
