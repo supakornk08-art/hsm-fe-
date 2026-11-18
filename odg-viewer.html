@@ -37,7 +37,7 @@ main{display:flex;min-height:0}
 #plotWrap{flex:1;display:grid;grid-template-rows:28px 1fr 46px;min-width:0;min-height:0;position:relative}
 #axis,#ov{display:block;width:100%;height:100%}
 #scroll{overflow-y:auto;overflow-x:hidden;min-height:0;position:relative}
-#plot{display:block;width:100%;touch-action:none;cursor:crosshair}
+#plot{display:block;width:100%;touch-action:pan-y;cursor:crosshair}
 #ov{cursor:pointer;touch-action:none;border-top:1px solid var(--line)}
 footer{display:flex;gap:16px;flex-wrap:wrap;padding:4px 10px;background:var(--panel);border-top:1px solid var(--line);font:12px Consolas,monospace;color:var(--dim)}
 footer b{color:var(--txt);font-weight:600}
@@ -104,6 +104,7 @@ kbd{background:#252b35;border:1px solid #3a4350;border-radius:4px;padding:0 4px;
     <li><b>ลากเมาส์</b> บนกราฟ = ซูมเข้าช่วงที่ลาก</li>
     <li><b>ล้อเมาส์</b> = ซูมเข้า/ออกตรงตำแหน่งเมาส์ · <kbd>Shift</kbd>+ล้อ = เลื่อนซ้าย/ขวา</li>
     <li><b>คลิก</b> = วางเคอร์เซอร์ A · <b>คลิกขวา</b> = เคอร์เซอร์ B (มือถือใช้ปุ่ม “เคอร์เซอร์ A/B” สลับ)</li>
+    <li><b>มือถือ:</b> ปัดขึ้น/ลง = เลื่อนรายการ · ปัดซ้าย/ขวา = เลื่อนเวลา · ถ่างสองนิ้ว = ซูม · แตะ = วางเคอร์เซอร์</li>
     <li>แถบล่างสุด (overview) คลิก/ลาก เพื่อเลือกช่วงเวลา</li>
     <li>คลิกช่องสีในรายการสัญญาณ = เปลี่ยนสีเส้น</li>
     <li><kbd>←</kbd><kbd>→</kbd> เลื่อน · <kbd>+</kbd><kbd>−</kbd> ซูม · <kbd>Home</kbd> ทั้งหมด · <kbd>Backspace</kbd> ย้อน</li>
@@ -566,12 +567,28 @@ dropEl.onclick=()=>$('file').click();
 // ---------- plot interaction ----------
 let drag=null;
 function px(e,c){const r=c.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top];}
-plot.addEventListener('pointerdown',e=>{if(!D||e.button===1)return;const [x]=px(e,plot);plot.setPointerCapture(e.pointerId);drag={x0:Math.max(LABEL_W,x),x1:Math.max(LABEL_W,x),btn:e.button,mode:'click'};});
-plot.addEventListener('pointermove',e=>{if(!D)return;const [x]=px(e,plot);hover=x>=LABEL_W?T(x):null;
+// Touch: swipe up/down = scroll list (native, touch-action:pan-y) · swipe left/right = pan · pinch = zoom · tap = cursor
+const touches=new Map();let pinch=null;
+plot.addEventListener('pointerdown',e=>{if(!D||e.button===1)return;const [x]=px(e,plot);
+  if(e.pointerType==='touch'){touches.set(e.pointerId,x);
+    if(touches.size===2){const [a,b]=[...touches.values()];const c=(a+b)/2;pinch={d0:Math.max(20,Math.abs(a-b)),tc:T(c),f:(c-LABEL_W)/plotW(),span:view[1]-view[0],pushed:false};drag=null;return;}
+    if(touches.size>2)return;
+    drag={x0:x,x1:x,btn:0,mode:'click',touch:true,v:view.slice()};return;}
+  plot.setPointerCapture(e.pointerId);drag={x0:Math.max(LABEL_W,x),x1:Math.max(LABEL_W,x),btn:e.button,mode:'click'};});
+plot.addEventListener('pointermove',e=>{if(!D)return;const [x]=px(e,plot);
+  if(e.pointerType==='touch'){if(touches.has(e.pointerId))touches.set(e.pointerId,x);
+    if(pinch&&touches.size===2){const [a,b]=[...touches.values()];const d=Math.max(20,Math.abs(a-b));const span=pinch.span*pinch.d0/d;const s=pinch.tc-pinch.f*span;setView(s,s+span,!pinch.pushed);pinch.pushed=true;return;}
+    if(drag&&drag.touch){drag.x1=x;if(drag.mode==='click'&&Math.abs(x-drag.x0)>8){drag.mode='pan';hist.push(view.slice());}
+      if(drag.mode==='pan'){const dt=(drag.x0-x)/plotW()*(drag.v[1]-drag.v[0]);setView(drag.v[0]+dt,drag.v[1]+dt,false);}}
+    return;}
+  hover=x>=LABEL_W?T(x):null;
   if(drag){drag.x1=Math.max(LABEL_W,Math.min(x,plot.clientWidth));if(drag.mode==='click'&&Math.abs(drag.x1-drag.x0)>6&&drag.btn===0)drag.mode='zoom';}
   redraw();});
-plot.addEventListener('pointerleave',()=>{hover=null;redraw();});
-plot.addEventListener('pointerup',e=>{if(!drag)return;const d=drag;drag=null;
+plot.addEventListener('pointerleave',e=>{if(e.pointerType!=='touch'){hover=null;redraw();}});
+const touchEnd=e=>{touches.delete(e.pointerId);if(touches.size<2)pinch=null;if(e.type==='pointercancel'&&drag&&drag.touch)drag=null;};
+plot.addEventListener('pointercancel',touchEnd);
+plot.addEventListener('pointerup',e=>{const wasPinch=!!pinch;if(e.pointerType==='touch')touchEnd(e);if(!drag||wasPinch){if(wasPinch)drag=null;return;}const d=drag;drag=null;
+  if(d.mode==='pan')return;
   if(d.mode==='zoom'){const a=T(Math.min(d.x0,d.x1)),b=T(Math.max(d.x0,d.x1));setView(a,b);}
   else if(d.x0>LABEL_W){const t=T(d.x0);if(d.btn===2||e.shiftKey||curSel==='B')curB=t;else curA=t;redraw();}
   else redraw();});
