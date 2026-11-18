@@ -1,0 +1,15 @@
+{
+ "id": "./odg-viewer.html",
+ "name": "ODG Snap Viewer",
+ "short_name": "ODG Viewer",
+ "lang": "th",
+ "start_url": "./odg-viewer.html",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#0d0f12",
+ "theme_color": "#0b4ea2",
+ "icons": [
+  {"src": "odg-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+  {"src": "odg-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"}
+ ]
+}

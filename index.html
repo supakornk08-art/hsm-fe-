@@ -92,7 +92,8 @@ const INSP=[
  {no:'09',f:'special-gauge',ic:'spgauge',nm:'Special Gauge',ar:'HSM'},
  {no:'10',f:'earth-leak',ic:'earth',nm:'Earth leak Common Converter',ar:'EHSM'}];
 const TOOL=[{f:'fault-lookup',ic:'fault',nm:'TMdrive-10e3 Fault Lookup',ar:'ค้นความหมายรหัส Fault'},
- {f:'sg-preset',ic:'sg',nm:'F1–F6 ENT S/G Preset Count',ar:'แปลง Actual gap → ค่า count ที่ต้อง preset'}];
+ {f:'sg-preset',ic:'sg',nm:'F1–F6 ENT S/G Preset Count',ar:'แปลง Actual gap → ค่า count ที่ต้อง preset'},
+ {f:'odg-viewer',ic:'odg',nm:'ODG Snap Viewer',ar:'เปิดดูกราฟไฟล์ .ogsf จาก ODG'}];
 
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
